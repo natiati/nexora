@@ -1,0 +1,552 @@
+// ==========================================================================
+// NEXORA — Schema de base de datos (Prisma)
+// Plataforma de Gestión de Inventario, Ventas y CRM — SaaS multi-tenant
+// Basado en: Nexora_Modelo_Datos_Detallado.docx
+// ==========================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==========================================================================
+// MÓDULO 1: CORE / MULTI-TENANT
+// ==========================================================================
+
+/// Empresas (tenants) del sistema SaaS. Cada empresa es un cliente independiente.
+model Company {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(150) // Nombre comercial
+  legalName String?  @map("legal_name") @db.VarChar(200) // Razón social
+  taxId     String?  @map("tax_id") @db.VarChar(30) // NIT / RFC / RUC
+  email     String?  @db.VarChar(150)
+  phone     String?  @db.VarChar(30)
+  address   String?
+  city      String?  @db.VarChar(100)
+  country   String?  @db.VarChar(80)
+  currency  String   @default("COP") @db.Char(3) // Moneda ISO 4217
+  timezone  String   @default("America/Bogota") @db.VarChar(50)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relaciones inversas (una empresa tiene muchos de todo esto)
+  users                UserCompanyRole[]
+  roles                Role[]
+  categories           Category[]
+  units                Unit[]
+  products             Product[]
+  productPrices        ProductPrice[]
+  suppliers            Supplier[]
+  customers            Customer[]
+  customerInteractions CustomerInteraction[]
+  warehouses           Warehouse[]
+  stockLevels          StockLevel[]
+  stockMovements       StockMovement[]
+  purchaseOrders       PurchaseOrder[]
+  salesOrders          SalesOrder[]
+  invoices             Invoice[]
+  payments             Payment[]
+
+  @@map("companies")
+}
+
+/// Usuarios del sistema. Un usuario puede pertenecer a varias empresas.
+model User {
+  id              String    @id @default(uuid())
+  email           String    @unique @db.VarChar(150) // Correo de login
+  passwordHash    String    @map("password_hash") @db.VarChar(255) // Hash bcrypt
+  firstName       String    @map("first_name") @db.VarChar(80)
+  lastName        String    @map("last_name") @db.VarChar(80)
+  phone           String?   @db.VarChar(30)
+  avatarUrl       String?   @map("avatar_url") @db.VarChar(500)
+  isActive        Boolean   @default(true) @map("is_active")
+  emailVerifiedAt DateTime? @map("email_verified_at")
+  lastLoginAt     DateTime? @map("last_login_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at") // Soft delete
+
+  companyRoles         UserCompanyRole[]
+  customerInteractions CustomerInteraction[]
+  stockMovements       StockMovement[]
+  purchaseOrders       PurchaseOrder[]
+  salesOrders          SalesOrder[]
+  invoices             Invoice[]
+  payments             Payment[]
+
+  @@map("users")
+}
+
+/// Roles del sistema (globales si companyId es NULL, o propios de una empresa).
+model Role {
+  id          String   @id @default(uuid())
+  companyId   String?  @map("company_id") // NULL = rol global del sistema
+  company     Company? @relation(fields: [companyId], references: [id])
+  name        String   @db.VarChar(80) // Ej: Admin Empresa, Vendedor, Almacenista
+  slug        String   @db.VarChar(80) // Ej: admin, seller, warehouse
+  description String?
+  isSystem    Boolean  @default(false) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  rolePermissions  RolePermission[]
+  userCompanyRoles UserCompanyRole[]
+
+  @@map("roles")
+}
+
+/// Catálogo de permisos disponibles en el sistema.
+model Permission {
+  id          String   @id @default(uuid())
+  name        String   @unique @db.VarChar(100) // Ej: products.create, sales.view
+  module      String   @db.VarChar(50) // products, sales, inventory...
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+/// Relación N:M entre roles y permisos.
+model RolePermission {
+  roleId       String @map("role_id")
+  permissionId String @map("permission_id")
+
+  role       Role       @relation(fields: [roleId], references: [id])
+  permission Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+/// Asigna un usuario a una empresa con un rol específico (multi-tenancy).
+model UserCompanyRole {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  companyId String   @map("company_id")
+  roleId    String   @map("role_id")
+  isDefault Boolean  @default(false) @map("is_default") // Empresa por defecto al iniciar sesión
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user    User    @relation(fields: [userId], references: [id])
+  company Company @relation(fields: [companyId], references: [id])
+  role    Role    @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, companyId])
+  @@map("user_company_roles")
+}
+
+// ==========================================================================
+// MÓDULO 2: CATÁLOGO
+// ==========================================================================
+
+/// Categorías de productos (admite categorías anidadas con parentId).
+model Category {
+  id          String     @id @default(uuid())
+  companyId   String     @map("company_id")
+  company     Company    @relation(fields: [companyId], references: [id])
+  parentId    String?    @map("parent_id")
+  parent      Category?  @relation("CategoryToSubcategory", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryToSubcategory")
+  name        String     @db.VarChar(120)
+  slug        String     @db.VarChar(120)
+  description String?
+  isActive    Boolean    @default(true) @map("is_active")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+  deletedAt   DateTime?  @map("deleted_at")
+
+  products Product[]
+
+  @@map("categories")
+}
+
+/// Unidades de medida (global si companyId es NULL, o propia de una empresa).
+model Unit {
+  id           String   @id @default(uuid())
+  companyId    String?  @map("company_id") // NULL = unidad del sistema
+  company      Company? @relation(fields: [companyId], references: [id])
+  name         String   @db.VarChar(50) // Ej: Unidad, Caja, Kg, Litro
+  abbreviation String   @db.VarChar(15) // Ej: und, cj, kg, lt
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  products Product[]
+
+  @@map("units")
+}
+
+/// Productos del catálogo de cada empresa.
+model Product {
+  id          String    @id @default(uuid())
+  companyId   String    @map("company_id")
+  company     Company   @relation(fields: [companyId], references: [id])
+  categoryId  String?   @map("category_id")
+  category    Category? @relation(fields: [categoryId], references: [id])
+  unitId      String    @map("unit_id")
+  unit        Unit      @relation(fields: [unitId], references: [id])
+  sku         String    @db.VarChar(60) // Código interno único por empresa
+  barcode     String?   @db.VarChar(50)
+  name        String    @db.VarChar(200)
+  description String?
+  costPrice   Decimal   @map("cost_price") @db.Decimal(14, 2)
+  salePrice   Decimal   @map("sale_price") @db.Decimal(14, 2)
+  minStock    Decimal   @default(0) @map("min_stock") @db.Decimal(12, 3) // Stock mínimo para alerta
+  isActive    Boolean   @default(true) @map("is_active")
+  trackStock  Boolean   @default(true) @map("track_stock") // Si se controla inventario
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  prices         ProductPrice[]
+  stockLevels    StockLevel[]
+  stockMovements StockMovement[]
+  purchaseItems  PurchaseOrderItem[]
+  salesItems     SalesOrderItem[]
+  invoiceItems   InvoiceItem[]
+
+  @@unique([companyId, sku])
+  @@map("products")
+}
+
+/// Listas de precios o precios especiales por cliente / volumen.
+model ProductPrice {
+  id          String    @id @default(uuid())
+  companyId   String    @map("company_id")
+  company     Company   @relation(fields: [companyId], references: [id])
+  productId   String    @map("product_id")
+  product     Product   @relation(fields: [productId], references: [id])
+  customerId  String?   @map("customer_id") // NULL = precio general de lista
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  name        String?   @db.VarChar(80) // Ej: Mayorista, Distribuidor
+  price       Decimal   @db.Decimal(14, 2)
+  minQuantity Decimal?  @map("min_quantity") @db.Decimal(12, 3)
+  validFrom   DateTime? @map("valid_from") @db.Date
+  validTo     DateTime? @map("valid_to") @db.Date
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("product_prices")
+}
+
+// ==========================================================================
+// MÓDULO 3: PROVEEDORES Y CLIENTES (CRM)
+// ==========================================================================
+
+/// Proveedores de la empresa.
+model Supplier {
+  id          String    @id @default(uuid())
+  companyId   String    @map("company_id")
+  company     Company   @relation(fields: [companyId], references: [id])
+  name        String    @db.VarChar(150)
+  taxId       String?   @map("tax_id") @db.VarChar(30)
+  email       String?   @db.VarChar(150)
+  phone       String?   @db.VarChar(30)
+  address     String?
+  contactName String?   @map("contact_name") @db.VarChar(120)
+  notes       String?
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  purchaseOrders PurchaseOrder[]
+
+  @@map("suppliers")
+}
+
+/// Clientes de la empresa.
+model Customer {
+  id           String    @id @default(uuid())
+  companyId    String    @map("company_id")
+  company      Company   @relation(fields: [companyId], references: [id])
+  code         String?   @db.VarChar(30) // Código interno de cliente
+  name         String    @db.VarChar(150) // Nombre o razón social
+  taxId        String?   @map("tax_id") @db.VarChar(30)
+  email        String?   @db.VarChar(150)
+  phone        String?   @db.VarChar(30)
+  address      String?
+  city         String?   @db.VarChar(100)
+  creditLimit  Decimal?  @map("credit_limit") @db.Decimal(14, 2)
+  paymentTerms String?   @map("payment_terms") @db.VarChar(50) // Ej: Contado, 30 días
+  notes        String?
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  contacts      CustomerContact[]
+  interactions  CustomerInteraction[]
+  productPrices ProductPrice[]
+  salesOrders   SalesOrder[]
+  invoices      Invoice[]
+
+  @@map("customers")
+}
+
+/// Personas de contacto dentro de un cliente (si el cliente es una empresa).
+model CustomerContact {
+  id         String   @id @default(uuid())
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id])
+  name       String   @db.VarChar(120)
+  position   String?  @db.VarChar(80) // Cargo
+  email      String?  @db.VarChar(150)
+  phone      String?  @db.VarChar(30)
+  isPrimary  Boolean  @default(false) @map("is_primary")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("customer_contacts")
+}
+
+/// Historial de seguimientos del CRM (llamadas, emails, visitas, notas).
+model CustomerInteraction {
+  id              String   @id @default(uuid())
+  companyId       String   @map("company_id")
+  company         Company  @relation(fields: [companyId], references: [id])
+  customerId      String   @map("customer_id")
+  customer        Customer @relation(fields: [customerId], references: [id])
+  userId          String   @map("user_id") // Quién registró la interacción
+  user            User     @relation(fields: [userId], references: [id])
+  type            String   @db.VarChar(30) // call, email, meeting, note, other
+  subject         String?  @db.VarChar(200)
+  content         String
+  interactionDate DateTime @map("interaction_date")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("customer_interactions")
+}
+
+// ==========================================================================
+// MÓDULO 4: INVENTARIO
+// ==========================================================================
+
+/// Almacenes o bodegas de la empresa.
+model Warehouse {
+  id        String   @id @default(uuid())
+  companyId String   @map("company_id")
+  company   Company  @relation(fields: [companyId], references: [id])
+  name      String   @db.VarChar(120) // Ej: Bodega Principal, Sucursal Norte
+  code      String?  @db.VarChar(20)
+  address   String?
+  isActive  Boolean  @default(true) @map("is_active")
+  isDefault Boolean  @default(false) @map("is_default")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  stockLevels    StockLevel[]
+  stockMovements StockMovement[]
+  purchaseOrders PurchaseOrder[]
+  salesOrders    SalesOrder[]
+
+  @@map("warehouses")
+}
+
+/// Stock actual por producto y almacén. Se actualiza con cada movimiento.
+model StockLevel {
+  id               String    @id @default(uuid())
+  companyId        String    @map("company_id")
+  company          Company   @relation(fields: [companyId], references: [id])
+  productId        String    @map("product_id")
+  product          Product   @relation(fields: [productId], references: [id])
+  warehouseId      String    @map("warehouse_id")
+  warehouse        Warehouse @relation(fields: [warehouseId], references: [id])
+  quantity         Decimal   @default(0) @db.Decimal(14, 3) // Cantidad disponible
+  reservedQuantity Decimal   @default(0) @map("reserved_quantity") @db.Decimal(14, 3)
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@unique([productId, warehouseId])
+  @@map("stock_levels")
+}
+
+/// Historial inmutable de todos los movimientos de inventario (auditoría).
+model StockMovement {
+  id            String    @id @default(uuid())
+  companyId     String    @map("company_id")
+  company       Company   @relation(fields: [companyId], references: [id])
+  productId     String    @map("product_id")
+  product       Product   @relation(fields: [productId], references: [id])
+  warehouseId   String    @map("warehouse_id")
+  warehouse     Warehouse @relation(fields: [warehouseId], references: [id])
+  type          String    @db.VarChar(30) // purchase_in, sale_out, transfer_in, transfer_out, adjustment, return
+  quantity      Decimal   @db.Decimal(14, 3) // Positivo = entrada, negativo = salida
+  unitCost      Decimal?  @map("unit_cost") @db.Decimal(14, 2)
+  referenceType String?   @map("reference_type") @db.VarChar(40) // purchase_order, sales_order, transfer, adjustment
+  referenceId   String?   @map("reference_id") // ID del documento origen
+  notes         String?
+  createdBy     String    @map("created_by")
+  user          User      @relation(fields: [createdBy], references: [id])
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@map("stock_movements")
+}
+
+// ==========================================================================
+// MÓDULO 5: COMPRAS, VENTAS Y FACTURACIÓN
+// ==========================================================================
+
+/// Órdenes de compra a proveedores.
+model PurchaseOrder {
+  id           String    @id @default(uuid())
+  companyId    String    @map("company_id")
+  company      Company   @relation(fields: [companyId], references: [id])
+  supplierId   String    @map("supplier_id")
+  supplier     Supplier  @relation(fields: [supplierId], references: [id])
+  warehouseId  String    @map("warehouse_id") // Almacén de recepción
+  warehouse    Warehouse @relation(fields: [warehouseId], references: [id])
+  orderNumber  String    @map("order_number") @db.VarChar(30)
+  status       String    @default("draft") @db.VarChar(30) // draft, ordered, partial, received, cancelled
+  orderDate    DateTime  @map("order_date") @db.Date
+  expectedDate DateTime? @map("expected_date") @db.Date
+  subtotal     Decimal   @default(0) @db.Decimal(14, 2)
+  taxAmount    Decimal   @default(0) @map("tax_amount") @db.Decimal(14, 2)
+  total        Decimal   @default(0) @db.Decimal(14, 2)
+  notes        String?
+  createdBy    String    @map("created_by")
+  user         User      @relation(fields: [createdBy], references: [id])
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  items PurchaseOrderItem[]
+
+  @@unique([companyId, orderNumber])
+  @@map("purchase_orders")
+}
+
+/// Ítems (líneas de producto) de una orden de compra.
+model PurchaseOrderItem {
+  id               String        @id @default(uuid())
+  purchaseOrderId  String        @map("purchase_order_id")
+  purchaseOrder    PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  productId        String        @map("product_id")
+  product          Product       @relation(fields: [productId], references: [id])
+  quantity         Decimal       @db.Decimal(14, 3) // Cantidad pedida
+  receivedQuantity Decimal       @default(0) @map("received_quantity") @db.Decimal(14, 3)
+  unitCost         Decimal       @map("unit_cost") @db.Decimal(14, 2)
+  taxRate          Decimal       @default(0) @map("tax_rate") @db.Decimal(5, 2)
+  subtotal         Decimal       @db.Decimal(14, 2)
+  total            Decimal       @db.Decimal(14, 2)
+
+  @@map("purchase_order_items")
+}
+
+/// Cotizaciones y órdenes de venta (se diferencian por el campo status).
+model SalesOrder {
+  id             String    @id @default(uuid())
+  companyId      String    @map("company_id")
+  company        Company   @relation(fields: [companyId], references: [id])
+  customerId     String    @map("customer_id")
+  customer       Customer  @relation(fields: [customerId], references: [id])
+  warehouseId    String    @map("warehouse_id") // Almacén de despacho
+  warehouse      Warehouse @relation(fields: [warehouseId], references: [id])
+  orderNumber    String    @map("order_number") @db.VarChar(30)
+  status         String    @default("quote") @db.VarChar(30) // quote, confirmed, partial, delivered, cancelled, invoiced
+  orderDate      DateTime  @map("order_date") @db.Date
+  validUntil     DateTime? @map("valid_until") @db.Date // Vigencia de la cotización
+  subtotal       Decimal   @default(0) @db.Decimal(14, 2)
+  taxAmount      Decimal   @default(0) @map("tax_amount") @db.Decimal(14, 2)
+  discountAmount Decimal   @default(0) @map("discount_amount") @db.Decimal(14, 2)
+  total          Decimal   @default(0) @db.Decimal(14, 2)
+  notes          String?
+  createdBy      String    @map("created_by")
+  user           User      @relation(fields: [createdBy], references: [id])
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  items    SalesOrderItem[]
+  invoices Invoice[]
+
+  @@unique([companyId, orderNumber])
+  @@map("sales_orders")
+}
+
+/// Ítems (líneas de producto) de una orden de venta.
+model SalesOrderItem {
+  id                String     @id @default(uuid())
+  salesOrderId      String     @map("sales_order_id")
+  salesOrder        SalesOrder @relation(fields: [salesOrderId], references: [id])
+  productId         String     @map("product_id")
+  product           Product    @relation(fields: [productId], references: [id])
+  quantity          Decimal    @db.Decimal(14, 3)
+  deliveredQuantity Decimal    @default(0) @map("delivered_quantity") @db.Decimal(14, 3)
+  unitPrice         Decimal    @map("unit_price") @db.Decimal(14, 2)
+  taxRate           Decimal    @default(0) @map("tax_rate") @db.Decimal(5, 2)
+  discountRate      Decimal    @default(0) @map("discount_rate") @db.Decimal(5, 2)
+  subtotal          Decimal    @db.Decimal(14, 2)
+  total             Decimal    @db.Decimal(14, 2)
+
+  @@map("sales_order_items")
+}
+
+/// Facturas emitidas a clientes.
+model Invoice {
+  id             String      @id @default(uuid())
+  companyId      String      @map("company_id")
+  company        Company     @relation(fields: [companyId], references: [id])
+  customerId     String      @map("customer_id")
+  customer       Customer    @relation(fields: [customerId], references: [id])
+  salesOrderId   String?     @map("sales_order_id") // Origen opcional
+  salesOrder     SalesOrder? @relation(fields: [salesOrderId], references: [id])
+  invoiceNumber  String      @map("invoice_number") @db.VarChar(30)
+  status         String      @default("draft") @db.VarChar(30) // draft, issued, partial, paid, cancelled, void
+  issueDate      DateTime    @map("issue_date") @db.Date
+  dueDate        DateTime?   @map("due_date") @db.Date
+  subtotal       Decimal     @default(0) @db.Decimal(14, 2)
+  taxAmount      Decimal     @default(0) @map("tax_amount") @db.Decimal(14, 2)
+  discountAmount Decimal     @default(0) @map("discount_amount") @db.Decimal(14, 2)
+  total          Decimal     @default(0) @db.Decimal(14, 2)
+  paidAmount     Decimal     @default(0) @map("paid_amount") @db.Decimal(14, 2) // Acumulado de pagos
+  notes          String?
+  createdBy      String      @map("created_by")
+  user           User        @relation(fields: [createdBy], references: [id])
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  items    InvoiceItem[]
+  payments Payment[]
+
+  @@unique([companyId, invoiceNumber])
+  @@map("invoices")
+}
+
+/// Ítems (líneas de producto) de una factura.
+model InvoiceItem {
+  id           String  @id @default(uuid())
+  invoiceId    String  @map("invoice_id")
+  invoice      Invoice @relation(fields: [invoiceId], references: [id])
+  productId    String  @map("product_id")
+  product      Product @relation(fields: [productId], references: [id])
+  description  String? @db.VarChar(255) // Puede diferir del nombre del producto
+  quantity     Decimal @db.Decimal(14, 3)
+  unitPrice    Decimal @map("unit_price") @db.Decimal(14, 2)
+  taxRate      Decimal @default(0) @map("tax_rate") @db.Decimal(5, 2)
+  discountRate Decimal @default(0) @map("discount_rate") @db.Decimal(5, 2)
+  subtotal     Decimal @db.Decimal(14, 2)
+  total        Decimal @db.Decimal(14, 2)
+
+  @@map("invoice_items")
+}
+
+/// Pagos registrados contra una factura.
+model Payment {
+  id            String   @id @default(uuid())
+  companyId     String   @map("company_id")
+  company       Company  @relation(fields: [companyId], references: [id])
+  invoiceId     String   @map("invoice_id")
+  invoice       Invoice  @relation(fields: [invoiceId], references: [id])
+  amount        Decimal  @db.Decimal(14, 2)
+  paymentDate   DateTime @map("payment_date") @db.Date
+  paymentMethod String   @map("payment_method") @db.VarChar(40) // cash, transfer, card, check, other
+  reference     String?  @db.VarChar(100) // Número de transacción / cheque
+  notes         String?
+  createdBy     String   @map("created_by")
+  user          User     @relation(fields: [createdBy], references: [id])
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("payments")
+}
