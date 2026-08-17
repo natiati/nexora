@@ -7,6 +7,10 @@ const bcrypt = require('bcrypt');
 const { PrismaClient } = require('@prisma/client');
 const { PrismaPg } = require('@prisma/adapter-pg');
 
+const authMiddleware = require('./middleware/auth');
+const productsRouter = require('./routes/products');
+const stockRouter = require('./routes/stock');
+
 const app = express();
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL,
@@ -16,6 +20,10 @@ const prisma = new PrismaClient({ adapter });
 
 app.use(cors());
 app.use(express.json());
+
+app.use('/products', authMiddleware, productsRouter);
+app.use('/stock', authMiddleware, stockRouter);
+
 
 // Ruta de prueba para confirmar que el servidor y Prisma funcionan
 app.get('/', (req, res) => {
