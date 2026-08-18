@@ -1,4 +1,3 @@
-// backend/server.js
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -10,6 +9,9 @@ const { PrismaPg } = require('@prisma/adapter-pg');
 const authMiddleware = require('./middleware/auth');
 const productsRouter = require('./routes/products');
 const stockRouter = require('./routes/stock');
+
+const customersRouter = require('./routes/customers');
+const salesOrdersRouter = require('./routes/sales-orders');
 
 const app = express();
 const adapter = new PrismaPg({
@@ -23,6 +25,9 @@ app.use(express.json());
 
 app.use('/products', authMiddleware, productsRouter);
 app.use('/stock', authMiddleware, stockRouter);
+app.use('/customers', authMiddleware, customersRouter);
+app.use('/sales-orders', authMiddleware, salesOrdersRouter);
+
 
 
 // Ruta de prueba para confirmar que el servidor y Prisma funcionan
@@ -71,4 +76,4 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
-});
+});// backend/server.js
