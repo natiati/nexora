@@ -11,3 +11,725 @@
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Nexora — El desorden de siempre, ahora en orden</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Sacramento&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --slate-950:#0F172A;
+    --slate-800:#1E293B;
+    --slate-700:#334155;
+    --slate-500:#64748B;
+    --slate-300:#CBD5E1;
+    --slate-200:#E2E8F0;
+    --slate-100:#F1F5F9;
+    --teal-700:#0F766E;
+    --teal-600:#0D9488;
+    --teal-50:#EFF9F7;
+    --success:#059669;   --success-bg:#ECFDF5;
+    --warning:#D97706;   --warning-bg:#FFFBEB;
+    --danger:#DC2626;    --danger-bg:#FEF2F2;
+    --white:#FFFFFF;
+    --r-card:12px; --r-ctrl:8px; --r-pill:999px;
+    --shadow-soft:0 1px 2px rgba(15,23,42,.04), 0 8px 24px -12px rgba(15,23,42,.10);
+    --shadow-lift:0 30px 70px -30px rgba(15,23,42,.35), 0 6px 18px -6px rgba(15,23,42,.12);
+    --max:1240px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0; font-family:'Inter',system-ui,sans-serif; color:var(--slate-950); background:var(--white); -webkit-font-smoothing:antialiased;}
+  img,svg{display:block;}
+  a{color:inherit; text-decoration:none;}
+  .mono{font-family:'JetBrains Mono',ui-monospace,monospace;}
+  .nums{font-variant-numeric:tabular-nums;}
+  .wrap{max-width:var(--max); margin:0 auto; padding:0 32px;}
+  ::selection{background:var(--teal-700); color:#fff;}
+
+  /* ---------- section marker (mono, doc-style numbering) ---------- */
+  .marker{
+    font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:500;
+    color:var(--teal-700); letter-spacing:.02em; margin-bottom:14px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .marker::before{content:''; width:14px; height:1px; background:var(--teal-700);}
+
+  /* ---------- Buttons ---------- */
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; font-family:inherit; font-size:14px; font-weight:600; padding:12px 22px; border-radius:var(--r-ctrl); cursor:pointer; border:1px solid transparent; transition:background .15s ease,border-color .15s ease,color .15s ease,transform .1s ease;}
+  .btn:active{transform:translateY(1px);}
+  .btn-primary{background:var(--teal-700); color:#fff;}
+  .btn-primary:hover{background:var(--teal-600);}
+  .btn-primary:focus-visible{outline:2px solid var(--teal-700); outline-offset:2px;}
+  .btn-outline{background:transparent; border-color:var(--slate-300); color:var(--slate-950);}
+  .btn-outline:hover{border-color:var(--slate-950); background:var(--slate-100);}
+  .btn-ghost{background:transparent; color:var(--slate-700); padding:10px 8px;}
+  .btn-ghost:hover{color:var(--slate-950);}
+  .btn-sm{padding:8px 14px; font-size:13px;}
+  .btn-light{background:var(--white); color:var(--slate-950);}
+  .btn-light:hover{background:var(--teal-50); color:var(--teal-700);}
+
+  /* ---------- Nav ---------- */
+  header.site-nav{position:sticky; top:0; z-index:50; background:rgba(255,255,255,.88); backdrop-filter:blur(10px); border-bottom:1px solid var(--slate-200);}
+  .nav-inner{display:flex; align-items:center; justify-content:space-between; height:64px;}
+  .brand{display:flex; align-items:center; gap:2px; font-weight:700; font-size:15px; letter-spacing:-0.01em;}
+  .logo-n{
+    font-family:'Sacramento', cursive; font-size:38px; line-height:1; font-weight:400;
+    background:linear-gradient(135deg, #5EEAD4 0%, #0F766E 55%, #0B5B54 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    position:relative; display:inline-flex; align-items:center; margin:0 1px 0 -2px; padding-right:5px;
+  }
+  .logo-n svg{position:absolute; top:2px; right:-1px; width:9px; height:9px; color:#99F6E4; opacity:.95;}
+  .nav-links{display:flex; gap:30px; font-size:13.5px; font-weight:500; color:var(--slate-700);}
+  .nav-links a{transition:color .15s ease;}
+  .nav-links a:hover{color:var(--slate-950);}
+  .nav-actions{display:flex; align-items:center; gap:2px;}
+
+  /* ---------- Hero ---------- */
+  .hero{padding:76px 0 0;}
+  .hero-grid{display:grid; grid-template-columns:1.5fr 1fr; gap:56px; align-items:end;}
+  .hero-eyebrow{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--slate-500); margin-bottom:18px;}
+  h1.hero-title{font-size:58px; line-height:1.04; letter-spacing:-0.03em; font-weight:700; margin:0;}
+  .hero-title .fade{color:var(--slate-300); font-weight:600;}
+  .hero-title .solid{color:var(--teal-700); display:block;}
+  .hero-sub{font-size:17px; line-height:1.6; color:var(--slate-500); max-width:480px; margin:22px 0 0;}
+  .hero-cta{display:flex; gap:12px; margin-top:32px;}
+
+  .hero-annotation{
+    border-left:2px solid var(--teal-600); padding-left:18px; margin-bottom:8px;
+  }
+  .hero-annotation .mono{font-size:11.5px; color:var(--slate-500); line-height:1.7; display:block;}
+  .hero-annotation .mono b{color:var(--teal-700); font-weight:600;}
+
+  /* ---------- Comparison slider (signature) ---------- */
+  .compare-stage{padding:52px 0 0;}
+  .compare-tags{display:flex; justify-content:space-between; margin-bottom:12px; font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--slate-500);}
+  .compare-tags b{color:var(--slate-950); font-weight:600;}
+  .compare-wrap{
+    position:relative; height:440px; border-radius:16px; overflow:hidden;
+    border:1px solid var(--slate-200); box-shadow:var(--shadow-lift); user-select:none; touch-action:none;
+    background:var(--white);
+  }
+  .compare-layer{position:absolute; inset:0;}
+  .compare-before{background:#EDEDED;}
+  .compare-after{clip-path: inset(0 55% 0 0);}
+
+  /* before: chaotic spreadsheet */
+  .sheet{width:100%; height:100%; font-family:Arial,Helvetica,sans-serif; font-size:10.5px; overflow:hidden; background:#fff;}
+  .sheet-head{display:flex; background:#374151; color:#fff; font-weight:700;}
+  .sheet-head div{padding:5px 6px; border-right:1px solid #4B5563; white-space:nowrap; min-width:64px;}
+  .sheet-row{display:flex; border-bottom:1px solid #E5E7EB;}
+  .sheet-row div{padding:5px 6px; border-right:1px solid #E5E7EB; min-width:64px; white-space:nowrap; color:#374151;}
+  .sheet-row:nth-child(odd){background:#FFFDE7;}
+  .sheet-row .r{color:#DC2626; font-weight:700;} .sheet-row .g{color:#16A34A; font-weight:700;}
+  .sheet-row .hl{background:#FEF08A;}
+
+  /* after: clean nexora slice */
+  .clean{width:100%; height:100%; background:var(--slate-100); padding:24px; display:flex; flex-direction:column;}
+  .clean-toolbar{display:flex; align-items:center; gap:8px; margin-bottom:14px;}
+  .clean-search{background:#fff; border:1px solid var(--slate-200); border-radius:8px; padding:6px 12px; font-size:12px; color:var(--slate-500); flex:1; max-width:180px;}
+  .clean-btn{background:var(--teal-700); color:#fff; font-size:12px; font-weight:600; padding:6px 12px; border-radius:8px;}
+  .clean-table{background:#fff; border:1px solid var(--slate-200); border-radius:12px; overflow:hidden; flex:1;}
+  .clean-table table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  .clean-table th{text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--slate-500); font-weight:600; padding:9px 14px; border-bottom:1px solid var(--slate-200);}
+  .clean-table td{padding:9px 14px; border-bottom:1px solid #F1F5F9; color:var(--slate-700); font-weight:500;}
+  .clean-table .strong{color:var(--slate-950); font-weight:600;}
+  .cbadge{font-size:10px; font-weight:600; padding:2px 9px; border-radius:999px;}
+  .cbadge.ok{background:var(--success-bg); color:var(--success);}
+  .cbadge.warn{background:var(--warning-bg); color:var(--warning);}
+  .cbadge.danger{background:var(--danger-bg); color:var(--danger);}
+
+  .compare-handle{
+    position:absolute; top:0; bottom:0; left:45%; width:0; z-index:5;
+    display:flex; align-items:center; justify-content:center; cursor:ew-resize;
+  }
+  .compare-handle::before{content:''; position:absolute; top:0; bottom:0; left:0; width:2px; background:#fff; box-shadow:0 0 0 1px rgba(15,23,42,.15);}
+  .handle-grip{
+    width:36px; height:36px; border-radius:50%; background:var(--teal-700); box-shadow:var(--shadow-lift);
+    display:flex; align-items:center; justify-content:center; position:relative; z-index:2;
+    border:1px solid var(--teal-600);
+  }
+  .handle-grip svg{width:15px; height:15px; color:#fff;}
+  .compare-hint{position:absolute; bottom:14px; left:50%; transform:translateX(-50%); font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--slate-500); background:rgba(255,255,255,.85); padding:4px 10px; border-radius:999px; pointer-events:none; z-index:4;}
+
+  /* ---------- product walkthrough ---------- */
+  .section{padding:110px 0;}
+  .section-head{max-width:600px; margin-bottom:44px;}
+  .section-title{font-size:30px; font-weight:700; letter-spacing:-0.02em; line-height:1.25;}
+  .section-sub{font-size:15.5px; color:var(--slate-500); margin-top:12px; line-height:1.65;}
+
+  .app-frame{border-radius:16px; border:1px solid var(--slate-200); box-shadow:var(--shadow-lift); overflow:hidden; background:#fff;}
+  .app-body{display:flex; min-height:500px;}
+  .m-sidebar{width:216px; flex-shrink:0; background:var(--slate-950); color:var(--slate-300); padding:18px 12px; display:flex; flex-direction:column;}
+  .m-brand{display:flex; align-items:center; gap:8px; padding:0 10px 18px; color:#fff; font-weight:700; font-size:13.5px;}
+  .m-brand .dot{width:7px; height:7px; border-radius:50%; background:var(--teal-600);}
+  .m-nav-label{font-family:'JetBrains Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:.08em; color:#5B6B84; padding:12px 12px 7px;}
+  .m-nav-item{display:flex; align-items:center; gap:10px; font-size:13px; font-weight:500; color:#CBD5E1; padding:8px 12px; border-radius:8px; margin-bottom:2px; cursor:pointer; border-left:3px solid transparent; transition:background .15s ease,color .15s ease; background:none; border-top:none; border-right:none; border-bottom:none; width:100%; text-align:left; font-family:inherit;}
+  .m-nav-item svg{width:15px; height:15px; flex-shrink:0; opacity:.85;}
+  .m-nav-item:hover{color:#fff;}
+  .m-nav-item.active{background:rgba(15,118,110,.18); color:#fff; border-left:3px solid var(--teal-600);}
+  .m-user{margin-top:auto; display:flex; align-items:center; gap:9px; padding:10px 12px; border-top:1px solid rgba(255,255,255,.08);}
+  .m-avatar{width:24px; height:24px; border-radius:50%; background:var(--teal-700); display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:700; color:#fff;}
+  .m-user-name{font-size:12px; color:#E2E8F0; font-weight:500;}
+  .m-user-role{font-size:10.5px; color:#5B6B84;}
+
+  .m-main{flex:1; display:flex; flex-direction:column; min-width:0;}
+  .m-topbar{height:50px; border-bottom:1px solid var(--slate-200); display:flex; align-items:center; justify-content:space-between; padding:0 20px; flex-shrink:0;}
+  .m-page-title{font-size:14px; font-weight:600;}
+  .m-search{display:flex; align-items:center; gap:7px; background:var(--slate-100); border:1px solid var(--slate-200); border-radius:8px; padding:6px 10px; font-size:12px; color:var(--slate-500); width:190px;}
+  .m-search svg{width:12px; height:12px; opacity:.7;}
+  .m-content{flex:1; background:var(--slate-100); padding:20px; overflow:auto;}
+
+  .panel{display:none; animation:panelIn .22s ease;}
+  .panel.active{display:block;}
+  @keyframes panelIn{from{opacity:0; transform:translateY(5px);} to{opacity:1; transform:translateY(0);}}
+
+  .kpi-row{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px;}
+  .kpi-card{background:#fff; border:1px solid var(--slate-200); border-radius:12px; padding:15px; position:relative;}
+  .kpi-icon{position:absolute; top:13px; right:13px; width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center;}
+  .kpi-icon svg{width:13px; height:13px;}
+  .kpi-icon.teal{background:var(--teal-50); color:var(--teal-700);}
+  .kpi-icon.warn{background:var(--warning-bg); color:var(--warning);}
+  .kpi-icon.slate{background:var(--slate-100); color:var(--slate-700);}
+  .kpi-icon.danger{background:var(--danger-bg); color:var(--danger);}
+  .kpi-value{font-size:22px; font-weight:700;}
+  .kpi-label{font-size:11.5px; color:var(--slate-500); margin-top:3px; font-weight:500;}
+
+  .split-row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .box{background:#fff; border:1px solid var(--slate-200); border-radius:12px; padding:15px;}
+  .box-title{font-size:12px; font-weight:600; margin-bottom:9px;}
+  .mini-row{display:flex; align-items:center; justify-content:space-between; padding:6px 0; border-bottom:1px solid #F1F5F9; font-size:12px;}
+  .mini-row:last-child{border-bottom:none;}
+  .mini-name{color:var(--slate-700); font-weight:500;}
+  .mini-sub{color:var(--slate-500); font-size:10.5px; font-family:'JetBrains Mono',monospace;}
+  .badge{font-size:10px; font-weight:600; padding:2px 9px; border-radius:999px;}
+  .badge.ok{background:var(--success-bg); color:var(--success);}
+  .badge.warn{background:var(--warning-bg); color:var(--warning);}
+  .badge.danger{background:var(--danger-bg); color:var(--danger);}
+
+  .table-toolbar{display:flex; align-items:center; gap:8px; margin-bottom:12px;}
+  .tb-search{flex:1; max-width:200px; background:#fff; border:1px solid var(--slate-200); border-radius:8px; padding:7px 10px; font-size:11.5px; color:var(--slate-500); display:flex; align-items:center; gap:6px;}
+  .tb-search svg{width:12px; height:12px;}
+  .tb-filter{background:#fff; border:1px solid var(--slate-200); border-radius:8px; padding:7px 12px; font-size:11.5px; color:var(--slate-700); font-weight:500; display:flex; align-items:center; gap:6px;}
+  .tb-spacer{flex:1;}
+  .m-table{width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--slate-200); border-radius:12px; overflow:hidden; font-size:12px;}
+  .m-table thead th{text-align:left; font-size:10.5px; font-weight:600; color:var(--slate-500); text-transform:uppercase; letter-spacing:.04em; padding:9px 14px; background:#FAFBFC; border-bottom:1px solid var(--slate-200);}
+  .m-table tbody td{padding:9px 14px; border-bottom:1px solid #F1F5F9; color:var(--slate-700); font-weight:500;}
+  .m-table tbody tr:last-child td{border-bottom:none;}
+  .m-table tbody tr:hover{background:#FAFBFC;}
+  .cell-strong{color:var(--slate-950); font-weight:600;}
+  .cell-muted{color:var(--slate-500); font-family:'JetBrains Mono',monospace; font-size:11px;}
+  .dots{color:var(--slate-500); font-weight:700; letter-spacing:1px; cursor:pointer;}
+
+  /* ---------- design system showcase ---------- */
+  .spec{background:var(--slate-950); border-radius:20px; padding:56px; color:#fff;}
+  .spec-head{display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:40px; flex-wrap:wrap; gap:16px;}
+  .spec .marker{color:var(--teal-600);}
+  .spec .marker::before{background:var(--teal-600);}
+  .spec-title{font-size:26px; font-weight:700; letter-spacing:-0.02em;}
+  .spec-note{font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#5B6B84;}
+
+  .swatch-row{display:grid; grid-template-columns:repeat(5,1fr); gap:1px; background:rgba(255,255,255,.08); border-radius:12px; overflow:hidden; margin-bottom:40px;}
+  .swatch{padding:20px 16px; min-height:110px; display:flex; flex-direction:column; justify-content:flex-end;}
+  .swatch-name{font-size:12.5px; font-weight:600; margin-bottom:4px;}
+  .swatch-hex{font-family:'JetBrains Mono',monospace; font-size:11px; opacity:.85;}
+
+  .type-scale{display:flex; flex-direction:column; gap:0;}
+  .type-row{display:flex; align-items:baseline; gap:24px; padding:14px 0; border-top:1px solid rgba(255,255,255,.1);}
+  .type-row:last-child{border-bottom:1px solid rgba(255,255,255,.1);}
+  .type-meta{width:170px; flex-shrink:0; font-family:'JetBrains Mono',monospace; font-size:11px; color:#5B6B84;}
+  .type-sample{color:#fff;}
+
+  /* ---------- principles (no numbers — not a sequence) ---------- */
+  .principles-row{display:grid; grid-template-columns:repeat(3,1fr); gap:0; border-top:1px solid var(--slate-200); border-bottom:1px solid var(--slate-200);}
+  .principle{padding:32px 28px; border-left:1px solid var(--slate-200);}
+  .principle:first-child{border-left:none;}
+  .principle-text{font-size:14px; color:var(--slate-700); font-weight:500; line-height:1.55;}
+  .principle-tag{font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--teal-700); margin-bottom:10px; display:block;}
+
+  /* ---------- CTA ---------- */
+  .cta-flat{border-top:2px solid var(--teal-700); border-radius:0 0 20px 20px; background:linear-gradient(180deg, var(--teal-50), #fff 65%); padding:64px 32px; margin:0 -32px; display:flex; align-items:center; justify-content:space-between; gap:40px; flex-wrap:wrap;}
+  .cta-title{font-size:30px; font-weight:700; letter-spacing:-0.02em; max-width:440px;}
+  .cta-actions{display:flex; gap:12px;}
+
+  /* ---------- Footer ---------- */
+  footer{padding:56px 0 36px;}
+  .footer-grid{display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; gap:40px; padding-bottom:36px; border-bottom:1px solid var(--slate-200);}
+  .footer-brand-text{font-size:13px; color:var(--slate-500); margin-top:12px; max-width:230px; line-height:1.6;}
+  .footer-col-title{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--slate-500); margin-bottom:13px; text-transform:uppercase; letter-spacing:.04em;}
+  .footer-col a{display:block; font-size:13px; color:var(--slate-700); margin-bottom:9px;}
+  .footer-col a:hover{color:var(--slate-950);}
+  .footer-bottom{display:flex; justify-content:space-between; padding-top:22px; font-size:12px; color:var(--slate-500); font-family:'JetBrains Mono',monospace;}
+
+  /* ---------- Modal (demo form) ---------- */
+  .modal-overlay{position:fixed; inset:0; background:rgba(15,23,42,.55); backdrop-filter:blur(2px); z-index:100; display:none; align-items:center; justify-content:center; padding:20px;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:#fff; border-radius:16px; width:100%; max-width:420px; padding:28px; box-shadow:var(--shadow-lift); position:relative;}
+  .modal-close{position:absolute; top:16px; right:16px; width:26px; height:26px; border-radius:7px; background:var(--slate-100); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--slate-500); font-size:13px; border:none;}
+  .modal-close:hover{background:var(--slate-200);}
+  .modal-eyebrow{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--teal-700); margin-bottom:8px;}
+  .modal-title{font-size:19px; font-weight:700; letter-spacing:-0.01em; margin-bottom:6px;}
+  .modal-sub{font-size:13px; color:var(--slate-500); margin-bottom:22px; line-height:1.5;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:12.5px; font-weight:600; color:var(--slate-700); margin-bottom:6px;}
+  .field input{width:100%; font-family:inherit; font-size:13.5px; padding:10px 12px; border:1px solid var(--slate-200); border-radius:8px; color:var(--slate-950); background:#fff;}
+  .field input:focus{outline:none; border-color:var(--teal-700); box-shadow:0 0 0 3px var(--teal-50);}
+  .modal-submit{width:100%; margin-top:6px;}
+  .modal-success{display:none; text-align:center; padding:16px 0;}
+  .modal-success.show{display:block;}
+  .modal-success .check{width:44px; height:44px; border-radius:50%; background:var(--success-bg); color:var(--success); display:flex; align-items:center; justify-content:center; margin:0 auto 16px;}
+  .modal-success .check svg{width:20px; height:20px;}
+  .modal-form.hide{display:none;}
+
+  @media (max-width:960px){
+    .nav-links{display:none;}
+    .hero-grid{grid-template-columns:1fr; gap:28px;}
+    h1.hero-title{font-size:38px;}
+    .compare-wrap{height:340px;}
+    .sheet, .clean{font-size:9.5px;}
+    .app-body{flex-direction:column;}
+    .m-sidebar{width:100%; flex-direction:row; flex-wrap:wrap;}
+    .m-brand{width:100%;} .m-user{display:none;} .m-nav-label{display:none;}
+    .kpi-row{grid-template-columns:1fr 1fr;}
+    .split-row{grid-template-columns:1fr;}
+    .swatch-row{grid-template-columns:repeat(2,1fr);}
+    .type-row{flex-direction:column; gap:4px;}
+    .principles-row{grid-template-columns:1fr;}
+    .principle{border-left:none; border-top:1px solid var(--slate-200);}
+    .principle:first-child{border-top:none;}
+    .footer-grid{grid-template-columns:1fr 1fr; gap:28px;}
+    .cta-flat{flex-direction:column; align-items:flex-start;}
+    .spec{padding:32px 24px;}
+  }
+  @media (max-width:600px){
+    .wrap{padding:0 20px;}
+    .footer-grid{grid-template-columns:1fr;}
+    .kpi-row{grid-template-columns:1fr 1fr;}
+    .section{padding:64px 0;}
+    .swatch-row{grid-template-columns:1fr 1fr;}
+  }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;} *{animation-duration:.001ms !important; transition-duration:.001ms !important;}}
+</style>
+</head>
+<body>
+
+<header class="site-nav">
+  <div class="wrap nav-inner">
+    <div class="brand">
+      <span class="logo-n">N<svg viewBox="0 0 18 18" fill="currentColor"><path d="M9 0 10.6 7.4 18 9l-7.4 1.6L9 18 7.4 10.6 0 9l7.4-1.6Z"/></svg></span>
+      exora
+    </div>
+    <nav class="nav-links">
+      <a href="#producto">Producto</a>
+      <a href="#sistema">Sistema de diseño</a>
+      <a href="#precios">Precios</a>
+    </nav>
+    <div class="nav-actions">
+      <a href="#" class="btn btn-ghost">Iniciar sesión</a>
+      <button class="btn btn-primary btn-sm" data-open-modal>Solicitar demo</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero wrap">
+    <div class="hero-grid">
+      <div>
+        <div class="hero-eyebrow mono">Nexora — gestión de inventario y ventas</div>
+        <h1 class="hero-title">
+          <span class="fade">El desorden de siempre.</span>
+          <span class="solid">Ahora en orden.</span>
+        </h1>
+        <p class="hero-sub">Productos, stock, ventas y compras en un solo lugar. Sin hojas de cálculo con veinte columnas ni "sistemas" que nadie entiende.</p>
+        <div class="hero-cta">
+          <button class="btn btn-primary" data-open-modal>Solicitar una demo</button>
+          <a href="#producto" class="btn btn-outline">Ver el producto ↓</a>
+        </div>
+      </div>
+      <div class="hero-annotation">
+        <span class="mono"><b>01</b> Minimalismo funcional — cada pantalla, un propósito.</span>
+        <span class="mono"><b>02</b> Máximo 1–2 acciones principales visibles.</span>
+        <span class="mono"><b>03</b> Tablas limpias. No "Excel online".</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- SIGNATURE: comparison slider -->
+  <section class="compare-stage wrap">
+    <div class="compare-tags">
+      <span>Arrastra el punto para comparar →</span>
+      <span><b>Antes</b> · <b style="color:var(--teal-700)">Nexora</b></span>
+    </div>
+    <div class="compare-wrap" id="compareWrap">
+      <div class="compare-layer compare-before">
+        <div class="sheet">
+          <div class="sheet-head">
+            <div>ID</div><div>NOMBRE_PROD</div><div>SKU_REF</div><div>CAT</div><div>ALMACEN</div><div>STK_DISP</div><div>STK_RES</div><div>STK_MIN</div><div>PRECIO_U</div><div>PRECIO_TOT</div><div>PROVEEDOR</div><div>UBIC</div><div>ESTADO</div><div>FECHA_MOV</div><div>OBS</div>
+          </div>
+          <div class="sheet-row"><div>001</div><div>Cable HDMI 2m</div><div>SKU-1042</div><div>ACC</div><div>Principal</div><div class="r">0</div><div>0</div><div>20</div><div>8.50</div><div>0.00</div><div>TecnoSup</div><div>A-12</div><div class="r hl">AGOTADO</div><div>14/08</div><div>revisar</div></div>
+          <div class="sheet-row"><div>002</div><div>Mouse inalámbrico</div><div>SKU-2210</div><div>PER</div><div>Principal</div><div class="hl">3</div><div>2</div><div>15</div><div>14.90</div><div>44.70</div><div>ElectroMax</div><div>B-04</div><div>BAJO</div><div>14/08</div><div></div></div>
+          <div class="sheet-row"><div>003</div><div>Monitor 24"</div><div>SKU-3390</div><div>PAN</div><div>Norte</div><div class="hl">2</div><div>1</div><div>10</div><div>149.00</div><div>298.00</div><div>VisionCo</div><div>C-01</div><div>BAJO</div><div>13/08</div><div>pedido en curso</div></div>
+          <div class="sheet-row"><div>004</div><div>Teclado mecánico</div><div>SKU-2255</div><div>PER</div><div>Principal</div><div class="g">26</div><div>4</div><div>15</div><div>39.00</div><div>1014.00</div><div>ElectroMax</div><div>B-05</div><div>OK</div><div>12/08</div><div></div></div>
+          <div class="sheet-row"><div>005</div><div>Silla ergonómica</div><div>SKU-5510</div><div>MOB</div><div>Sur</div><div class="g">12</div><div>0</div><div>5</div><div>210.00</div><div>2520.00</div><div>OfiPro</div><div>D-09</div><div>OK</div><div>10/08</div><div>nueva línea</div></div>
+          <div class="sheet-row"><div>006</div><div>Hub USB-C</div><div>SKU-4120</div><div>ACC</div><div>Principal</div><div class="r hl">0</div><div>0</div><div>10</div><div>22.00</div><div>0.00</div><div>TecnoSup</div><div>A-14</div><div class="r">AGOTADO</div><div>09/08</div><div>urgente</div></div>
+        </div>
+      </div>
+      <div class="compare-layer compare-after" id="afterLayer">
+        <div class="clean">
+          <div class="clean-toolbar">
+            <div class="clean-search">Buscar producto…</div>
+            <div style="flex:1"></div>
+            <div class="clean-btn">+ Nuevo producto</div>
+          </div>
+          <div class="clean-table">
+            <table>
+              <thead><tr><th>Nombre</th><th>SKU</th><th>Stock</th><th>Precio</th><th>Estado</th></tr></thead>
+              <tbody>
+                <tr><td class="strong">Cable HDMI 2m</td><td class="mono" style="color:#64748B; font-size:11px;">SKU-1042</td><td>0</td><td class="nums">$8.50</td><td><span class="cbadge danger">Agotado</span></td></tr>
+                <tr><td class="strong">Mouse inalámbrico</td><td class="mono" style="color:#64748B; font-size:11px;">SKU-2210</td><td>3</td><td class="nums">$14.90</td><td><span class="cbadge warn">Stock bajo</span></td></tr>
+                <tr><td class="strong">Monitor 24"</td><td class="mono" style="color:#64748B; font-size:11px;">SKU-3390</td><td>2</td><td class="nums">$149.00</td><td><span class="cbadge warn">Stock bajo</span></td></tr>
+                <tr><td class="strong">Teclado mecánico</td><td class="mono" style="color:#64748B; font-size:11px;">SKU-2255</td><td>26</td><td class="nums">$39.00</td><td><span class="cbadge ok">En stock</span></td></tr>
+                <tr><td class="strong">Silla ergonómica</td><td class="mono" style="color:#64748B; font-size:11px;">SKU-5510</td><td>12</td><td class="nums">$210.00</td><td><span class="cbadge ok">En stock</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="compare-handle" id="compareHandle">
+        <div class="handle-grip">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 6 3 10l4 4M13 6l4 4-4 4"/></svg>
+        </div>
+      </div>
+      <div class="compare-hint">15 columnas vs. 5 — lo mismo, ordenado</div>
+    </div>
+  </section>
+
+  <!-- PRODUCT WALKTHROUGH -->
+  <section class="section wrap" id="producto">
+    <div class="section-head">
+      <div class="marker">02 — Así se ve por dentro</div>
+      <h2 class="section-title">Tres pantallas, no treinta</h2>
+      <p class="section-sub">Dashboard, productos e inventario comparten la misma estructura. Cambia de sección y compruébalo.</p>
+    </div>
+
+    <div class="app-frame">
+      <div class="app-body">
+        <aside class="m-sidebar">
+          <div class="m-brand"><span class="dot"></span> Nexora</div>
+          <div class="m-nav-label">Principal</div>
+          <button class="m-nav-item active" data-panel="dashboard">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="6" height="6" rx="1.3"/><rect x="11" y="3" width="6" height="6" rx="1.3"/><rect x="3" y="11" width="6" height="6" rx="1.3"/><rect x="11" y="11" width="6" height="6" rx="1.3"/></svg>
+            Dashboard
+          </button>
+          <button class="m-nav-item" data-panel="productos">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6.5 10 3l7 3.5-7 3.5-7-3.5Z"/><path d="M3 6.5V14l7 3.5 7-3.5V6.5"/><path d="M10 10v7.5"/></svg>
+            Productos
+          </button>
+          <button class="m-nav-item" data-panel="inventario">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="14" height="4.5" rx="1"/><rect x="3" y="9" width="14" height="4.5" rx="1"/><rect x="3" y="15" width="9" height="2" rx="1"/></svg>
+            Inventario
+          </button>
+          <button class="m-nav-item" tabindex="-1" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 15V9l4-4 4 4v6"/><path d="M11 15V7l4-4 3 3v9"/></svg>
+            Ventas
+          </button>
+          <button class="m-nav-item" tabindex="-1" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="6" r="2.4"/><circle cx="14" cy="7" r="2"/><path d="M3 16c0-2.4 1.9-4 4-4s4 1.6 4 4"/><path d="M11.2 12.3c2 .2 3.8 1.7 3.8 3.7"/></svg>
+            Clientes
+          </button>
+          <div class="m-nav-label">Otros</div>
+          <button class="m-nav-item" tabindex="-1" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 3h9l3 3v11H4z"/><path d="M8 8h6M8 11h6M8 14h4"/></svg>
+            Reportes
+          </button>
+          <div class="m-user">
+            <div class="m-avatar">MJ</div>
+            <div><div class="m-user-name">María Jiménez</div><div class="m-user-role">Operaciones</div></div>
+          </div>
+        </aside>
+
+        <div class="m-main">
+          <div class="m-topbar">
+            <div class="m-page-title" id="panelTitle">Dashboard</div>
+            <div class="m-search">
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8.5" cy="8.5" r="5"/><path d="M16 16l-3.2-3.2"/></svg>
+              Buscar…
+            </div>
+          </div>
+          <div class="m-content">
+
+            <div class="panel active" id="panel-dashboard">
+              <div class="kpi-row">
+                <div class="kpi-card"><div class="kpi-icon teal"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 15V9l4-4 4 4v6"/><path d="M11 15V7l4-4 3 3v9"/></svg></div><div class="kpi-value nums" data-count="482300" data-prefix="$">$0</div><div class="kpi-label">Ventas del mes</div></div>
+                <div class="kpi-card"><div class="kpi-icon warn"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 2 2 17h16z"/><path d="M10 8v4M10 14h.01"/></svg></div><div class="kpi-value nums" data-count="14">0</div><div class="kpi-label">Stock crítico</div></div>
+                <div class="kpi-card"><div class="kpi-icon slate"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l3 2"/></svg></div><div class="kpi-value nums" data-count="27">0</div><div class="kpi-label">Órdenes pendientes</div></div>
+                <div class="kpi-card"><div class="kpi-icon danger"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="5" width="15" height="10" rx="1.5"/><path d="M2.5 8.5h15"/></svg></div><div class="kpi-value nums" data-count="18900" data-prefix="$">$0</div><div class="kpi-label">Cuentas por cobrar</div></div>
+              </div>
+              <div class="split-row">
+                <div class="box">
+                  <div class="box-title">Productos con stock bajo</div>
+                  <div class="mini-row"><div><div class="mini-name">Cable HDMI 2m</div><div class="mini-sub">SKU-1042</div></div><span class="badge danger">Agotado</span></div>
+                  <div class="mini-row"><div><div class="mini-name">Mouse inalámbrico</div><div class="mini-sub">SKU-2210</div></div><span class="badge warn">3 uds</span></div>
+                  <div class="mini-row"><div><div class="mini-name">Teclado mecánico</div><div class="mini-sub">SKU-2255</div></div><span class="badge warn">5 uds</span></div>
+                  <div class="mini-row"><div><div class="mini-name">Monitor 24"</div><div class="mini-sub">SKU-3390</div></div><span class="badge warn">2 uds</span></div>
+                  <div class="mini-row"><div><div class="mini-name">Hub USB-C</div><div class="mini-sub">SKU-4120</div></div><span class="badge danger">Agotado</span></div>
+                </div>
+                <div class="box">
+                  <div class="box-title">Últimas ventas</div>
+                  <div class="mini-row"><div><div class="mini-name">Distribuidora Norte</div><div class="mini-sub">Factura #3021</div></div><span class="cell-strong nums">$4,120</span></div>
+                  <div class="mini-row"><div><div class="mini-name">Comercial Andina</div><div class="mini-sub">Factura #3020</div></div><span class="cell-strong nums">$1,860</span></div>
+                  <div class="mini-row"><div><div class="mini-name">Retail Sur</div><div class="mini-sub">Factura #3019</div></div><span class="cell-strong nums">$980</span></div>
+                  <div class="mini-row"><div><div class="mini-name">Tienda Central</div><div class="mini-sub">Factura #3018</div></div><span class="cell-strong nums">$2,430</span></div>
+                  <div class="mini-row"><div><div class="mini-name">Distribuidora Norte</div><div class="mini-sub">Factura #3017</div></div><span class="cell-strong nums">$610</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel" id="panel-productos">
+              <div class="table-toolbar">
+                <div class="tb-search"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8.5" cy="8.5" r="5"/><path d="M16 16l-3.2-3.2"/></svg> Buscar producto…</div>
+                <div class="tb-filter">Categoría <svg width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 8l5 5 5-5"/></svg></div>
+                <div class="tb-spacer"></div>
+                <button class="btn btn-primary btn-sm">+ Nuevo producto</button>
+              </div>
+              <table class="m-table">
+                <thead><tr><th>Nombre</th><th>SKU</th><th>Categoría</th><th>Stock</th><th>Precio</th><th>Estado</th><th></th></tr></thead>
+                <tbody>
+                  <tr><td class="cell-strong">Cable HDMI 2m</td><td class="cell-muted">SKU-1042</td><td>Accesorios</td><td>0</td><td class="nums">$8.50</td><td><span class="badge danger">Agotado</span></td><td class="dots">⋯</td></tr>
+                  <tr><td class="cell-strong">Mouse inalámbrico</td><td class="cell-muted">SKU-2210</td><td>Periféricos</td><td>3</td><td class="nums">$14.90</td><td><span class="badge warn">Stock bajo</span></td><td class="dots">⋯</td></tr>
+                  <tr><td class="cell-strong">Monitor 24"</td><td class="cell-muted">SKU-3390</td><td>Pantallas</td><td>2</td><td class="nums">$149.00</td><td><span class="badge warn">Stock bajo</span></td><td class="dots">⋯</td></tr>
+                  <tr><td class="cell-strong">Teclado mecánico</td><td class="cell-muted">SKU-2255</td><td>Periféricos</td><td>26</td><td class="nums">$39.00</td><td><span class="badge ok">En stock</span></td><td class="dots">⋯</td></tr>
+                  <tr><td class="cell-strong">Silla ergonómica</td><td class="cell-muted">SKU-5510</td><td>Mobiliario</td><td>12</td><td class="nums">$210.00</td><td><span class="badge ok">En stock</span></td><td class="dots">⋯</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="panel" id="panel-inventario">
+              <div class="table-toolbar">
+                <div class="tb-filter">Almacén: Principal <svg width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 8l5 5 5-5"/></svg></div>
+                <div class="tb-spacer"></div>
+                <button class="btn btn-outline btn-sm">Ajustar</button>
+                <button class="btn btn-outline btn-sm">Transferir</button>
+              </div>
+              <table class="m-table">
+                <thead><tr><th>Producto</th><th>Disponible</th><th>Reservado</th><th>Mínimo</th><th>Estado</th></tr></thead>
+                <tbody>
+                  <tr><td class="cell-strong">Cable HDMI 2m</td><td>0</td><td>0</td><td>20</td><td><span class="badge danger">Agotado</span></td></tr>
+                  <tr><td class="cell-strong">Mouse inalámbrico</td><td>3</td><td>2</td><td>15</td><td><span class="badge warn">Bajo mínimo</span></td></tr>
+                  <tr><td class="cell-strong">Monitor 24"</td><td>2</td><td>1</td><td>10</td><td><span class="badge warn">Bajo mínimo</span></td></tr>
+                  <tr><td class="cell-strong">Teclado mecánico</td><td>26</td><td>4</td><td>15</td><td><span class="badge ok">Óptimo</span></td></tr>
+                  <tr><td class="cell-strong">Silla ergonómica</td><td>12</td><td>0</td><td>5</td><td><span class="badge ok">Óptimo</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DESIGN SYSTEM SHOWCASE -->
+  <section class="section wrap" id="sistema" style="padding-top:0;">
+    <div class="spec">
+      <div class="spec-head">
+        <div>
+          <div class="marker">03 — Sistema de diseño</div>
+          <h2 class="spec-title">La ficha técnica, en vivo</h2>
+        </div>
+        <span class="spec-note">Inter · JetBrains Mono</span>
+      </div>
+
+      <div class="swatch-row">
+        <div class="swatch" style="background:#0F172A;">
+          <div class="swatch-name">Primary / Slate</div><div class="swatch-hex mono">#0F172A</div>
+        </div>
+        <div class="swatch" style="background:#0F766E;">
+          <div class="swatch-name">Accent / Teal</div><div class="swatch-hex mono">#0F766E</div>
+        </div>
+        <div class="swatch" style="background:#F1F5F9; color:#0F172A;">
+          <div class="swatch-name">Neutral 100</div><div class="swatch-hex mono" style="opacity:.6;">#F1F5F9</div>
+        </div>
+        <div class="swatch" style="background:#059669;">
+          <div class="swatch-name">Success</div><div class="swatch-hex mono">#059669</div>
+        </div>
+        <div class="swatch" style="background:#D97706;">
+          <div class="swatch-name">Warning</div><div class="swatch-hex mono">#D97706</div>
+        </div>
+      </div>
+
+      <div class="type-scale">
+        <div class="type-row"><div class="type-meta">H1 / 28px / Semibold</div><div class="type-sample" style="font-size:28px; font-weight:600;">Título de página</div></div>
+        <div class="type-row"><div class="type-meta">H2 / 20px / Medium</div><div class="type-sample" style="font-size:20px; font-weight:500;">Subtítulo de sección</div></div>
+        <div class="type-row"><div class="type-meta">Body / 15px / Regular</div><div class="type-sample" style="font-size:15px; color:#CBD5E1;">Texto de cuerpo para tablas y descripciones.</div></div>
+        <div class="type-row"><div class="type-meta">Label / 12px / Medium</div><div class="type-sample mono" style="font-size:12px; color:#94A3B8;">LABEL / META</div></div>
+        <div class="type-row"><div class="type-meta">KPI / 32px / Semibold</div><div class="type-sample nums" style="font-size:32px; font-weight:600;">$482,300</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRINCIPLES -->
+  <section class="wrap">
+    <div class="principles-row">
+      <div class="principle"><span class="principle-tag mono">ESPACIO</span><p class="principle-text">Espacio en blanco generoso. Evita la sensación de sistema saturado de datos.</p></div>
+      <div class="principle"><span class="principle-tag mono">JERARQUÍA</span><p class="principle-text">El usuario sabe dónde mirar en menos de dos segundos, sin instrucciones.</p></div>
+      <div class="principle"><span class="principle-tag mono">ACCIONES</span><p class="principle-text">Un menú "⋯" por fila en vez de cinco botones sueltos compitiendo por espacio.</p></div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="wrap">
+    <div class="cta-flat">
+      <h3 class="cta-title">¿Listo para ver Nexora con los datos de tu operación?</h3>
+      <div class="cta-actions">
+        <button class="btn btn-primary" data-open-modal>Solicitar una demo</button>
+        <a href="mailto:hola@nexora.app" class="btn btn-outline">Escribir por correo</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <div class="footer-grid">
+    <div>
+      <div class="brand">
+        <span class="logo-n">N<svg viewBox="0 0 18 18" fill="currentColor"><path d="M9 0 10.6 7.4 18 9l-7.4 1.6L9 18 7.4 10.6 0 9l7.4-1.6Z"/></svg></span>
+        exora
+      </div>
+      <p class="footer-brand-text">Gestión de inventario, ventas y compras en una sola plataforma, pensada para no perderte.</p>
+    </div>
+    <div class="footer-col"><div class="footer-col-title">Producto</div><a href="#">Dashboard</a><a href="#">Inventario</a><a href="#">Ventas</a><a href="#">Compras</a></div>
+    <div class="footer-col"><div class="footer-col-title">Compañía</div><a href="#">Nosotros</a><a href="#">Contacto</a><a href="#">Precios</a></div>
+    <div class="footer-col"><div class="footer-col-title">Legal</div><a href="#">Privacidad</a><a href="#">Términos</a></div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 Nexora</span>
+    <span>v1.0 — build local</span>
+  </div>
+</footer>
+
+<!-- DEMO MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div class="modal-form" id="modalForm">
+      <div class="modal-eyebrow mono">Solicitar demo</div>
+      <div class="modal-title">Agenda 20 minutos con nosotros</div>
+      <p class="modal-sub">Te mostramos Nexora funcionando con datos parecidos a los de tu operación. Sin compromiso.</p>
+      <form id="demoForm">
+        <div class="field"><label for="f-name">Nombre</label><input id="f-name" type="text" placeholder="Tu nombre" required></div>
+        <div class="field"><label for="f-company">Empresa</label><input id="f-company" type="text" placeholder="Nombre de tu empresa" required></div>
+        <div class="field"><label for="f-email">Correo</label><input id="f-email" type="email" placeholder="tu@empresa.com" required></div>
+        <button type="submit" class="btn btn-primary modal-submit">Enviar solicitud</button>
+      </form>
+    </div>
+    <div class="modal-success" id="modalSuccess">
+      <div class="check"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 10.5l4 4 8-9"/></svg></div>
+      <div class="modal-title" style="text-align:center;">Solicitud enviada</div>
+      <p class="modal-sub" style="text-align:center;">Te contactaremos en menos de 24 horas para agendar la demo.</p>
+      <button class="btn btn-outline" style="width:100%;" id="modalDone">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---- Tab switching in product walkthrough ----
+  const navItems = document.querySelectorAll('.m-nav-item[data-panel]');
+  const titles = { dashboard:'Dashboard', productos:'Listado de productos', inventario:'Inventario / Stock' };
+  navItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const target = item.dataset.panel;
+      document.querySelectorAll('.m-nav-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('panel-' + target).classList.add('active');
+      document.getElementById('panelTitle').textContent = titles[target];
+    });
+  });
+
+  // ---- KPI count-up ----
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const formatVal = (el, val) => (el.dataset.prefix || '') + Math.round(val).toLocaleString('es-ES');
+  const animateCount = (el) => {
+    const target = parseFloat(el.dataset.count);
+    if (reduceMotion) { el.textContent = formatVal(el, target); return; }
+    const duration = 900, start = performance.now();
+    const step = (now) => {
+      const p = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = formatVal(el, target * eased);
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
+  const kpiObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { animateCount(e.target); kpiObserver.unobserve(e.target); } });
+  }, { threshold:.4 });
+  document.querySelectorAll('.kpi-value[data-count]').forEach(el => kpiObserver.observe(el));
+
+  // ---- Before/after comparison slider ----
+  const compareWrap = document.getElementById('compareWrap');
+  const afterLayer = document.getElementById('afterLayer');
+  const handle = document.getElementById('compareHandle');
+  let dragging = false;
+
+  function setPct(pct){
+    pct = Math.max(4, Math.min(96, pct));
+    afterLayer.style.clipPath = `inset(0 ${100 - pct}% 0 0)`;
+    handle.style.left = pct + '%';
+  }
+  function pctFromEvent(e){
+    const rect = compareWrap.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    return (x / rect.width) * 100;
+  }
+  handle.addEventListener('pointerdown', (e) => { dragging = true; e.preventDefault(); });
+  compareWrap.addEventListener('pointerdown', (e) => { dragging = true; setPct(pctFromEvent(e)); });
+  window.addEventListener('pointermove', (e) => { if (dragging) setPct(pctFromEvent(e)); });
+  window.addEventListener('pointerup', () => dragging = false);
+  setPct(45);
+
+  // gentle auto-hint sweep on load (once), respecting reduced motion
+  if (!reduceMotion) {
+    let t = 0;
+    const sweep = setInterval(() => {
+      t += 1;
+      setPct(45 + Math.sin(t/6) * 6);
+      if (t > 40) clearInterval(sweep);
+    }, 30);
+    compareWrap.addEventListener('pointerdown', () => clearInterval(sweep), { once:true });
+  }
+
+  // ---- Demo modal ----
+  const overlay = document.getElementById('modalOverlay');
+  const openers = document.querySelectorAll('[data-open-modal]');
+  const closeBtn = document.getElementById('modalClose');
+  const doneBtn = document.getElementById('modalDone');
+  const form = document.getElementById('demoForm');
+  const formView = document.getElementById('modalForm');
+  const successView = document.getElementById('modalSuccess');
+
+  function openModal(){ overlay.classList.add('open'); formView.classList.remove('hide'); successView.classList.remove('show'); }
+  function closeModal(){ overlay.classList.remove('open'); }
+
+  openers.forEach(b => b.addEventListener('click', openModal));
+  closeBtn.addEventListener('click', closeModal);
+  doneBtn.addEventListener('click', closeModal);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    formView.classList.add('hide');
+    successView.classList.add('show');
+  });
+</script>
+
+</body>
+</html>
+
