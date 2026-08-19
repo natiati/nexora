@@ -4,6 +4,8 @@ import Products from './pages/Products';
 import Stock from './pages/Stock';
 import Customers from './pages/Customers';
 import Sales from './pages/Sales';
+import Purchases from './pages/Purchases';
+import Invoices from './pages/Invoices';
 
 function App() {
   return (
@@ -14,6 +16,8 @@ function App() {
         <Route path="/stock" element={<Stock />} />
         <Route path="/customers" element={<Customers />} />
         <Route path="/sales" element={<Sales />} />
+        <Route path="/purchases" element={<Purchases />} />
+        <Route path="/invoices" element={<Invoices />} />
       </Routes>
     </BrowserRouter>
   );

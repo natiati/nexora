@@ -13,6 +13,10 @@ const stockRouter = require('./routes/stock');
 const customersRouter = require('./routes/customers');
 const salesOrdersRouter = require('./routes/sales-orders');
 
+const suppliersRouter = require('./routes/suppliers');
+const purchaseOrdersRouter = require('./routes/purchase-orders');
+const invoicesRouter = require('./routes/invoices');
+
 const app = express();
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL,
@@ -27,6 +31,9 @@ app.use('/products', authMiddleware, productsRouter);
 app.use('/stock', authMiddleware, stockRouter);
 app.use('/customers', authMiddleware, customersRouter);
 app.use('/sales-orders', authMiddleware, salesOrdersRouter);
+app.use('/suppliers', authMiddleware, suppliersRouter);
+app.use('/purchase-orders', authMiddleware, purchaseOrdersRouter);
+app.use('/invoices', authMiddleware, invoicesRouter);
 
 
 
