@@ -20,7 +20,7 @@ export default function Login() {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      navigate('/products');
+      navigate('/dashboard');
     } catch {
       setError('Correo o contraseña incorrectos');
     }
@@ -60,7 +60,7 @@ export default function Login() {
 
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white rounded p-2"
+          className="w-full bg-teal-700 text-white rounded p-2"
         >
           Ingresar
         </button>
