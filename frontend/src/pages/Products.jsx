@@ -13,8 +13,8 @@ export default function Products() {
     await api.post('/products', {
       ...form,
       companyId: 'seed-company-id',
-      categoryId: '002bf9af-af73-47e6-99ae-51fce976e9f3',
-      unitId: '9c9701ca-790a-4cdb-b917-94cde6d68c08',
+      categoryId: 'f009c2f2-7bae-4e76-9298-eb6c27340060',
+      unitId: 'dbf742bb-3efe-4680-96b5-3d0be4e30f37',
       costPrice: Number(form.costPrice),
       salePrice: Number(form.salePrice),
     });

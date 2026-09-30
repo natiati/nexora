@@ -33,7 +33,7 @@ export default function Sales() {
   const handleConfirm = async () => {
     const { data: order } = await api.post('/sales-orders', {
       companyId: 'seed-company-id',
-      warehouseId: '40d50e26-5d70-4888-a62e-7841f162411c',
+      warehouseId: 'e9ff077b-7025-4462-9030-a7ea97e8cedc',
       customerId,
       orderNumber: `SO-${Date.now()}`,
       orderDate: new Date().toISOString(),

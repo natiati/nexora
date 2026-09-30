@@ -29,7 +29,7 @@ export default function Purchases() {
   const createOrder = async () => {
     await api.post('/purchase-orders', {
       companyId: 'seed-company-id',
-      warehouseId: '40d50e26-5d70-4888-a62e-7841f162411c',
+      warehouseId: 'e9ff077b-7025-4462-9030-a7ea97e8cedc',
       supplierId,
       orderNumber: `PO-${Date.now()}`,
       orderDate: new Date().toISOString(),
