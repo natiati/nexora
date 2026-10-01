@@ -7,7 +7,7 @@ const { PrismaClient } = require('@prisma/client');
 const { PrismaPg } = require('@prisma/adapter-pg');
 
 const authMiddleware = require('./middleware/auth');
-const productsRouter = require('./routes/products');
+const productRoutes = require('./src/api/product.routes');
 const stockRouter = require('./routes/stock');
 
 const customersRouter = require('./routes/customers');
@@ -24,10 +24,12 @@ const adapter = new PrismaPg({
 
 const prisma = new PrismaClient({ adapter });
 
+const errorHandler = require('./middleware/error-handler');
+
 app.use(cors());
 app.use(express.json());
 
-app.use('/products', authMiddleware, productsRouter);
+app.use('/products', authMiddleware, productRoutes);
 app.use('/stock', authMiddleware, stockRouter);
 app.use('/customers', authMiddleware, customersRouter);
 app.use('/sales-orders', authMiddleware, salesOrdersRouter);
@@ -35,7 +37,7 @@ app.use('/suppliers', authMiddleware, suppliersRouter);
 app.use('/purchase-orders', authMiddleware, purchaseOrdersRouter);
 app.use('/invoices', authMiddleware, invoicesRouter);
 
-
+app.use(errorHandler);
 
 // Ruta de prueba para confirmar que el servidor y Prisma funcionan
 app.get('/', (req, res) => {
