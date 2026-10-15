@@ -1,43 +1,36 @@
+// backend/server.js
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const { PrismaClient } = require('@prisma/client');
-const { PrismaPg } = require('@prisma/adapter-pg');
 
+const prisma = require('./src/lib/prisma');
 const authMiddleware = require('./middleware/auth');
+const errorHandler = require('./middleware/error-handler');
+
+// Rutas (todas en src/api, arquitectura MVC)
 const productRoutes = require('./src/api/product.routes');
-const stockRouter = require('./routes/stock');
-
-const customersRouter = require('./routes/customers');
-const salesOrdersRouter = require('./routes/sales-orders');
-
-const suppliersRouter = require('./routes/suppliers');
-const purchaseOrdersRouter = require('./routes/purchase-orders');
-const invoicesRouter = require('./routes/invoices');
+const supplierRoutes = require('./src/api/supplier.routes');
+const customerRoutes = require('./src/api/customer.routes');
+const stockRoutes = require('./src/api/stock.routes');
+const salesOrderRoutes = require('./src/api/sales-order.routes');
+const purchaseOrderRoutes = require('./src/api/purchase-order.routes');
+const invoiceRoutes = require('./src/api/invoice.routes');
 
 const app = express();
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL,
-});
-
-const prisma = new PrismaClient({ adapter });
-
-const errorHandler = require('./middleware/error-handler');
 
 app.use(cors());
 app.use(express.json());
 
+// Rutas protegidas con JWT
 app.use('/products', authMiddleware, productRoutes);
-app.use('/stock', authMiddleware, stockRouter);
-app.use('/customers', authMiddleware, customersRouter);
-app.use('/sales-orders', authMiddleware, salesOrdersRouter);
-app.use('/suppliers', authMiddleware, suppliersRouter);
-app.use('/purchase-orders', authMiddleware, purchaseOrdersRouter);
-app.use('/invoices', authMiddleware, invoicesRouter);
-
-app.use(errorHandler);
+app.use('/suppliers', authMiddleware, supplierRoutes);
+app.use('/customers', authMiddleware, customerRoutes);
+app.use('/stock', authMiddleware, stockRoutes);
+app.use('/sales-orders', authMiddleware, salesOrderRoutes);
+app.use('/purchase-orders', authMiddleware, purchaseOrderRoutes);
+app.use('/invoices', authMiddleware, invoiceRoutes);
 
 // Ruta de prueba para confirmar que el servidor y Prisma funcionan
 app.get('/', (req, res) => {
@@ -81,8 +74,11 @@ app.post('/login', async (req, res) => {
   }
 });
 
+// Debe ir después de todas las rutas
+app.use(errorHandler);
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
-});// backend/server.js
+});

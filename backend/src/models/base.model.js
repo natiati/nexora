@@ -10,8 +10,8 @@ class BaseModel {
     return this.prismaModel.findUnique({ where: { id } });
   }
 
-  static async create(data) {
-    return this.prismaModel.create({ data });
+    static async create(data, options = {}) {
+    return this.prismaModel.create({ data, ...options });
   }
 
   static async update(id, data) {

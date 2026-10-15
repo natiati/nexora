@@ -31,3 +31,5 @@ class ProductController {
 }
 
 module.exports = ProductController;
+
+//El DTO define las reglas de validación. El controller le proporciona los datos que necesita validar. 
