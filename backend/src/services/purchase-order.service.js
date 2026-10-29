@@ -9,13 +9,15 @@ class PurchaseOrderService {
   static async create({ supplierId, orderNumber, orderDate, items, userId }) {
     // productId no tiene llave foránea en el schema: se valida aquí que existan
     if (!(await ProductModel.existAll(items.map((i) => i.productId)))) {
-      throw new AppError('Alguno de los productos no existe', 400);
+      throw new AppError('Alguno de los productos no existe', 404);
     }
 
     let subtotal = 0;
+
     const itemsData = items.map((item) => {
       const total = item.quantity * item.unitCost;
       subtotal += total;
+
       return {
         productId: item.productId,
         quantity: item.quantity,
@@ -41,18 +43,35 @@ class PurchaseOrderService {
   }
 
   // GET /purchase-orders
-  static async list() {
-    const orders = await PurchaseOrderModel.findAll(
-      {},
-      { include: { supplier: true, items: true }, orderBy: { createdAt: 'desc' } }
-    );
-    const productIds = [...new Set(orders.flatMap((o) => o.items.map((i) => i.productId)))];
+  static async list({ skip, take }) {
+    const [orders, total] = await Promise.all([
+      PurchaseOrderModel.findAll(
+        {},
+        {
+          include: { supplier: true, items: true },
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take
+        }
+      ),
+      PurchaseOrderModel.count()
+    ]);
+
+    const productIds = [
+      ...new Set(orders.flatMap((o) => o.items.map((i) => i.productId)))
+    ];
+
     const products = await ProductModel.findMapByIds(productIds);
 
-    return orders.map((order) => ({
+    const data = orders.map((order) => ({
       ...order,
-      items: order.items.map((item) => ({ ...item, product: products.get(item.productId) ?? null }))
+      items: order.items.map((item) => ({
+        ...item,
+        product: products.get(item.productId) ?? null
+      }))
     }));
+
+    return { data, total };
   }
 
   // POST /purchase-orders/:id/receive
@@ -62,23 +81,42 @@ class PurchaseOrderService {
         where: { id: orderId },
         include: { items: true, supplier: true }
       });
-      if (!order) throw new AppError('Orden de compra no encontrada', 404);
-      if (order.status === 'received') throw new AppError('La orden ya fue recibida', 409);
+
+      if (!order) {
+        throw new AppError('Orden de compra no encontrada', 404);
+      }
+
+      if (order.status === 'received') {
+        throw new AppError('La orden ya fue recibida', 409);
+      }
 
       // Almacén: proveedor → empresa → almacén predeterminado
       const warehouse = await tx.warehouse.findFirst({
-        where: { companyId: order.supplier.companyId, isDefault: true }
+        where: {
+          companyId: order.supplier.companyId,
+          isDefault: true
+        }
       });
+
       if (!warehouse) {
-        throw new AppError('La empresa del proveedor no tiene un almacén predeterminado configurado', 400);
+        throw new AppError(
+          'La empresa del proveedor no tiene un almacén predeterminado configurado',
+          409
+        );
       }
 
-      // "Reclama" la orden de forma atómica: si otra petición la recibió al mismo tiempo, count = 0
+      // Reclama la orden de forma atómica
       const claimed = await tx.purchaseOrder.updateMany({
-        where: { id: orderId, status: { not: 'received' } },
+        where: {
+          id: orderId,
+          status: { not: 'received' }
+        },
         data: { status: 'received' }
       });
-      if (claimed.count === 0) throw new AppError('La orden ya fue recibida', 409);
+
+      if (claimed.count === 0) {
+        throw new AppError('La orden ya fue recibida', 409);
+      }
 
       for (const item of order.items) {
         await StockService.increase(tx, {
@@ -106,7 +144,10 @@ class PurchaseOrderService {
         });
       }
 
-      return tx.purchaseOrder.findUnique({ where: { id: orderId }, include: { items: true } });
+      return tx.purchaseOrder.findUnique({
+        where: { id: orderId },
+        include: { items: true }
+      });
     });
   }
 }

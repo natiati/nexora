@@ -1,29 +1,19 @@
-// Middleware de autenticación
-// El objetivo de este middleware es verificar que el usuario esté autenticado antes de permitirle acceder a ciertas rutas protegidas. Se espera que el token JWT se envíe en el encabezado de autorización de la solicitud HTTP.
-
-const jwt = require('jsonwebtoken'); // Aqui se importa la libreria q ya usamos para trabajar con JWT
+const jwt = require('jsonwebtoken');
 
 function authMiddleware(req, res, next) {
-  const authHeader = req.headers.authorization; // "Bearer <token>"
+  const header = req.headers.authorization;
 
-  if (!authHeader) {  
-    return res.status(401).json({
-      error: 'Falta token de autenticación'
-    });
+  if (!header || !header.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token no proporcionado' });
   }
 
-  const token = authHeader.split(' ')[1];
-
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
-
-    req.user = payload; // { userId, email }
-
+    const payload = jwt.verify(header.slice(7), process.env.JWT_SECRET);
+    // El usuario sale del token firmado, nunca del cuerpo de la petición
+    req.user = { id: payload.userId, email: payload.email };
     next();
   } catch (error) {
-    return res.status(401).json({
-      error: 'Token inválido o expirado'     
-    });
+    return res.status(401).json({ error: 'Token inválido o expirado' });
   }
 }
 

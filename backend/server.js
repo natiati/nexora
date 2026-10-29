@@ -21,6 +21,7 @@ const invoiceRoutes = require('./src/api/invoice.routes');
 const app = express();
 
 app.use(cors());
+app.use(cors({ exposedHeaders: ['X-Total-Count'] }));
 app.use(express.json());
 
 // Rutas protegidas con JWT
@@ -43,9 +44,8 @@ app.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     const user = await prisma.user.findUnique({ where: { email } });
-
-    if (!user) {
-      return res.status(401).json({ error: 'Credenciales inválidas' });
+    if (!user || !user.isActive) {
+     return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
     const passwordOk = await bcrypt.compare(password, user.passwordHash);
@@ -72,6 +72,8 @@ app.post('/login', async (req, res) => {
     console.error(error);
     res.status(500).json({ error: 'Error del servidor' });
   }
+
+  
 });
 
 // Debe ir después de todas las rutas

@@ -1,10 +1,17 @@
 const CustomerModel = require('../models/customer.model');
 const { CreateCustomerSchema } = require('../dtos/customer.dto');
+const { parsePagination } = require('../utils/pagination');
 
 class CustomerController {
   static async list(req, res, next) {
     try {
-      const customers = await CustomerModel.findAll({}, { orderBy: { createdAt: 'desc' } });
+      const { skip, take } = parsePagination(req.query);
+      const where = { deletedAt: null };
+      const [customers, total] = await Promise.all([
+        CustomerModel.findAll(where, { orderBy: { createdAt: 'desc' }, skip, take }),
+        CustomerModel.count(where)
+      ]);
+      res.set('X-Total-Count', String(total));
       res.json(customers);
     } catch (error) { next(error); }
   }
@@ -12,11 +19,9 @@ class CustomerController {
   static async create(req, res, next) {
     try {
       const data = CreateCustomerSchema.parse(req.body);
-      const customer = await CustomerModel.create(data);
-      res.status(201).json(customer);
+      res.status(201).json(await CustomerModel.create(data));
     } catch (error) { next(error); }
   }
 }
 
 module.exports = CustomerController;
-// hace parte de controllers porq tiene res, req, next, y hace parte de models porq tiene CustomerModel

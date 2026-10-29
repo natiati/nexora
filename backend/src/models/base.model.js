@@ -21,6 +21,10 @@ class BaseModel {
   static async remove(id) {
     return this.prismaModel.delete({ where: { id } });
   }
+
+    static async count(where = {}) {
+    return this.prismaModel.count({ where });
+  }
 }
 
 module.exports = BaseModel;

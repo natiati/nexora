@@ -22,7 +22,7 @@ function errorHandler(err, req, res, next) {
       return res.status(409).json({ error: 'El registro ya existe (violación de unicidad)' });
     }
     if (err.code === 'P2003') {
-      return res.status(400).json({ error: 'Una referencia no existe (llave foránea inválida)' });
+      return res.status(404).json({ error: 'Un registro referenciado no existe' });
     }
     if (err.code === 'P2025') {
       return res.status(404).json({ error: 'Registro no encontrado' });
