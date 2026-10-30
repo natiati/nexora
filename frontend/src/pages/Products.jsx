@@ -12,9 +12,8 @@ export default function Products() {
     e.preventDefault();
     await api.post('/products', {
       ...form,
-      companyId: 'seed-company-id',
-      categoryId: 'f009c2f2-7bae-4e76-9298-eb6c27340060',
-      unitId: 'dbf742bb-3efe-4680-96b5-3d0be4e30f37',
+      categoryId: products[0]?.categoryId,
+      unitId: products[0]?.unitId,
       costPrice: Number(form.costPrice),
       salePrice: Number(form.salePrice),
     });

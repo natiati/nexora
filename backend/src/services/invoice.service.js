@@ -14,6 +14,17 @@ class InvoiceService {
       throw new AppError('Orden de venta no encontrada', 404);
     }
 
+    // Solo se factura una orden confirmada (no una cotización)
+    if (order.status !== 'confirmed') {
+      throw new AppError('Solo se pueden facturar órdenes de venta confirmadas', 409);
+    }
+
+    // Una orden de venta solo puede tener una factura
+    const existing = await InvoiceModel.findBySalesOrder(salesOrderId);
+    if (existing.length > 0) {
+      throw new AppError('La orden de venta ya tiene una factura', 409);
+    }
+
     return InvoiceModel.create({
       salesOrderId,
       invoiceNumber,
@@ -101,4 +112,4 @@ class InvoiceService {
   }
 }
 
-module.exports = InvoiceService;
+module.exports = InvoiceService; 

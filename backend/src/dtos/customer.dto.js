@@ -1,7 +1,7 @@
 const { z } = require('zod');
 
 const CreateCustomerSchema = z.object({
-  companyId: z.string().uuid(),
+    companyId: z.string().min(1),
   name: z.string().min(1).max(150),
   email: z.string().email().max(150).optional(),
   phone: z.string().max(30).optional(),

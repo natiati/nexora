@@ -8,6 +8,7 @@ const bcrypt = require('bcrypt');
 const prisma = require('./src/lib/prisma');
 const authMiddleware = require('./middleware/auth');
 const errorHandler = require('./middleware/error-handler');
+const { LoginSchema } = require('./src/dtos/auth.dto');
 
 // Rutas (todas en src/api, arquitectura MVC)
 const productRoutes = require('./src/api/product.routes');
@@ -20,7 +21,6 @@ const invoiceRoutes = require('./src/api/invoice.routes');
 
 const app = express();
 
-app.use(cors());
 app.use(cors({ exposedHeaders: ['X-Total-Count'] }));
 app.use(express.json());
 
@@ -41,11 +41,16 @@ app.get('/', (req, res) => {
 // Login
 app.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    // Valida que lleguen un correo con formato válido y una contraseña
+    const parsed = LoginSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Datos inválidos' });
+    }
+    const { email, password } = parsed.data;
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user || !user.isActive) {
-     return res.status(401).json({ error: 'Credenciales inválidas' });
+      return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
     const passwordOk = await bcrypt.compare(password, user.passwordHash);
@@ -72,8 +77,6 @@ app.post('/login', async (req, res) => {
     console.error(error);
     res.status(500).json({ error: 'Error del servidor' });
   }
-
-  
 });
 
 // Debe ir después de todas las rutas
@@ -83,4 +86,4 @@ const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
-});
+}); 
