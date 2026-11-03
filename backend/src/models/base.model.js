@@ -1,31 +1,59 @@
+const prisma = require('../lib/prisma');
+
+/**
+ * Clase base de todos los modelos (una subclase por tabla).
+ * Los modelos son la única capa que habla con Prisma: los services nunca lo importan.
+ * El último parámetro `tx` permite ejecutar la operación dentro de una transacción.
+ */
 class BaseModel {
-  /** Delegado de Prisma correspondiente a la tabla; cada subclase lo define. */
-  static prismaModel;
+  /** Nombre del delegado de Prisma de la tabla (prisma.<delegate>); cada subclase lo define. */
+  static delegate;
 
-  static async findAll(where = {}, options = {}) {
-    return this.prismaModel.findMany({ where, ...options });
+  static db(tx) {
+    return (tx ?? prisma)[this.delegate];
   }
 
-  static async findById(id) {
-    return this.prismaModel.findUnique({ where: { id } });
+  static async findAll(where = {}, options = {}, tx) {
+    return this.db(tx).findMany({ where, ...options });
   }
 
-    static async create(data, options = {}) {
-    return this.prismaModel.create({ data, ...options });
+  static async findOne(where, options = {}, tx) {
+    return this.db(tx).findFirst({ where, ...options });
   }
 
-  static async update(id, data) {
-    return this.prismaModel.update({ where: { id }, data });
+  static async findById(id, options = {}, tx) {
+    return this.db(tx).findUnique({ where: { id }, ...options });
   }
 
-  static async remove(id) {
-    return this.prismaModel.delete({ where: { id } });
+  static async count(where = {}, tx) {
+    return this.db(tx).count({ where });
   }
 
-    static async count(where = {}) {
-    return this.prismaModel.count({ where });
+  static async create(data, options = {}, tx) {
+    return this.db(tx).create({ data, ...options });
+  }
+
+  static async update(id, data, options = {}, tx) {
+    return this.db(tx).update({ where: { id }, data, ...options });
+  }
+
+  static async updateMany(where, data, tx) {
+    return this.db(tx).updateMany({ where, data });
+  }
+
+  static async remove(id, tx) {
+    return this.db(tx).delete({ where: { id } });
+  }
+
+  // Borrado lógico: solo para las tablas que tienen deleted_at
+  static async softDelete(id, tx) {
+    return this.db(tx).update({ where: { id }, data: { deletedAt: new Date(), isActive: false } });
+  }
+
+  // Ejecuta varias operaciones como una sola unidad: o se guardan todas o ninguna
+  static async transaction(work) {
+    return prisma.$transaction(work, { timeout: 15000 });
   }
 }
 
 module.exports = BaseModel;
-// esta clase es la base para todos los modelos, y define métodos genéricos para interactuar con la base de datos a través de Prisma. Cada subclase debe definir su propio `prismaModel` correspondiente a la tabla que representa.

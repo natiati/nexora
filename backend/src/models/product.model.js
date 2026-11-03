@@ -7,7 +7,7 @@ const BaseModel = require('./base.model');
  * Las columnas y relaciones coinciden con schema.prisma.
  */
 class ProductModel extends BaseModel {
-  static prismaModel = prisma.product;
+  static delegate = 'product';
 
   static tableName = 'products';
 
@@ -55,6 +55,15 @@ class ProductModel extends BaseModel {
 
   static async findByCategory(categoryId) {
     return prisma.product.findMany({ where: { categoryId, deletedAt: null }, orderBy: { name: 'asc' } });
+  }
+
+  // Productos activos que controlan stock en una empresa
+  static async findTrackedByCompany(companyId) {
+    return prisma.product.findMany({
+      where: { deletedAt: null, isActive: true, trackStock: true, category: { companyId } },
+      include: { unit: true },
+      orderBy: { name: 'asc' }
+    });
   }
 }
 

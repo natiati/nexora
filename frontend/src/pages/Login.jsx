@@ -1,70 +1,89 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import api from '../api/client';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { getErrorMessage } from '../api/client';
+import { login } from '../api/resources';
+import { hasSession, saveSession } from '../api/session';
+import AuthCard from '../components/AuthCard';
+import ErrorMessage from '../components/ErrorMessage';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  // Página que se quería abrir antes de pasar por el login
+  const destination = location.state?.from ?? '/dashboard';
+
+  // Quien ya inició sesión pasa directo al panel
+  if (hasSession()) {
+    return <Navigate to={destination} replace />;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
 
     try {
-      const { data } = await api.post('/login', {
-        email,
-        password
-      });
-
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-
-      navigate('/dashboard');
-    } catch {
-      setError('Correo o contraseña incorrectos');
+      saveSession(await login({ email, password }));
+      navigate(destination, { replace: true });
+    } catch (err) {
+      // 401 = credenciales; 429 = demasiados intentos; sin respuesta = servidor caído
+      setError(
+        err.response?.status === 401
+          ? 'Correo o contraseña incorrectos'
+          : getErrorMessage(err)
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Solo en desarrollo: en producción no se muestran credenciales
+  const demoHint = import.meta.env.DEV && (
+    <p className="text-xs text-slate-400 text-center mt-4">
+      Demo: admin@nexora.com · vendedor@nexora.com — clave 123456
+    </p>
+  );
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-8 rounded-lg shadow-md w-80"
-      >
-        <h1 className="text-xl font-bold mb-4 text-center">
-          Nexora
-        </h1>
+    <AuthCard subtitle="Inicia sesión para entrar a tu cuenta" footer={demoHint}>
+      <form onSubmit={handleSubmit}>
+        <ErrorMessage message={error} />
 
-        {error && (
-          <p className="text-red-500 text-sm mb-3">
-            {error}
-          </p>
-        )}
-
+        <label htmlFor="email" className="ui-label">Correo</label>
         <input
+          id="email"
           type="email"
-          placeholder="Correo"
+          autoComplete="username"
+          placeholder="tu@empresa.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full border rounded p-2 mb-3"
+          required
+          autoFocus
+          className="ui-input mb-3"
         />
 
+        <div className="flex items-center justify-between">
+          <label htmlFor="password" className="ui-label">Contraseña</label>
+          <Link to="/recuperar-contrasena" className="text-xs text-teal-700 hover:text-teal-600 mb-1">¿La olvidaste?</Link>
+        </div>
         <input
+          id="password"
           type="password"
-          placeholder="Contraseña"
+          autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full border rounded p-2 mb-4"
+          required
+          className="ui-input mb-5"
         />
 
-        <button
-          type="submit"
-          className="w-full bg-teal-700 text-white rounded p-2"
-        >
-          Ingresar
+        <button type="submit" disabled={loading} className="ui-btn w-full">
+          {loading ? 'Ingresando…' : 'Iniciar sesión'}
         </button>
       </form>
-    </div>
+    </AuthCard>
   );
 }

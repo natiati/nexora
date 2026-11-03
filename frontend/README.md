@@ -1,16 +1,19 @@
-# React + Vite
+# Nexora – Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite + Tailwind. Consume la API del backend (ver README de la raíz).
 
-Currently, two official plugins are available:
+```bash
+cp .env.example .env     # VITE_API_URL = URL del backend
+npm install
+npm run dev              # abre la landing en http://localhost:5173
+```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- `src/pages/Landing.jsx`: página pública, la primera que se ve (`/`). Sus estilos están aislados en `src/styles/landing.css`.
+- `src/pages/Login.jsx`: inicio de sesión (`/login`).
+- `src/api/client.js`: instancia de axios (agrega el token JWT y cierra sesión en 401).
+- `src/api/resources.js`: una función por endpoint; las páginas no escriben URLs.
+- `src/api/session.js`: usuario guardado, rol y logout.
+- `src/components/Layout.jsx`: menú y protección de rutas (sin sesión va al login).
+- `src/components/CrudPage.jsx`: tabla, búsqueda, paginación y formulario de los catálogos.
+- `src/components/OrderForm.jsx`: formulario con líneas que comparten Ventas y Compras.
+- `src/pages/`: una página por módulo.

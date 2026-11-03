@@ -7,7 +7,7 @@ const BaseModel = require('./base.model');
  * Las columnas y relaciones coinciden con schema.prisma.
  */
 class SalesOrderItemModel extends BaseModel {
-  static prismaModel = prisma.salesOrderItem;
+  static delegate = 'salesOrderItem';
 
   static tableName = 'sales_order_items';
 
@@ -33,6 +33,17 @@ class SalesOrderItemModel extends BaseModel {
   // Ítems de una orden de venta
   static async findByOrder(salesOrderId) {
     return prisma.salesOrderItem.findMany({ where: { salesOrderId } });
+  }
+
+  // Productos más vendidos entre las órdenes que cumplen el filtro
+  static async sumByProduct(salesOrder, take) {
+    return prisma.salesOrderItem.groupBy({
+      by: ['productId'],
+      where: { salesOrder },
+      _sum: { quantity: true, total: true },
+      orderBy: { _sum: { total: 'desc' } },
+      take
+    });
   }
 }
 

@@ -7,7 +7,7 @@ const BaseModel = require('./base.model');
  * Las columnas y relaciones coinciden con schema.prisma.
  */
 class PaymentModel extends BaseModel {
-  static prismaModel = prisma.payment;
+  static delegate = 'payment';
 
   static tableName = 'payments';
 

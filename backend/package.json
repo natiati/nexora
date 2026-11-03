@@ -1,31 +1,43 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "dev": "nodemon server.js",
-    "start": "node --env-file=.env server.js"
+    "start": "node server.js",
+    "seed": "node prisma/seed.js",
+    "test": "node --test tests/api.test.js",
+    "db:migrate": "prisma migrate deploy",
+    "db:reset": "prisma migrate reset --force && npm run seed",
+    "db:setup": "prisma generate && prisma migrate deploy && npm run seed",
+    "mail:test": "node scripts/test-mail.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
-  "prisma": {
-    "seed": "node prisma/seed.js"
-  },
   "dependencies": {
-    "@prisma/adapter-pg": "^7.9.1",
-    "@prisma/client": "^7.9.1",
+    "@prisma/adapter-pg": "^7.10.1",
+    "@prisma/client": "^7.10.1",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
+    "nexora": "file:..",
+    "nodemailer": "^10.3.1",
     "pg": "^8.23.0",
     "prisma": "^7.9.1",
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "mailparser": "^3.14.1",
+    "nodemon": "^3.1.14",
+    "smtp-server": "^3.21.3"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

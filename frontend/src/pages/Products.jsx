@@ -1,62 +1,35 @@
-import { useEffect, useState } from 'react';
-import api from '../api/client';
+import { categoriesApi, productsApi, unitsApi } from '../api/resources';
+import CrudPage from '../components/CrudPage';
+import { productColumns } from '../components/productColumns';
+import { useOptions } from '../hooks/useList';
 
 export default function Products() {
-  const [products, setProducts] = useState([]);
-  const [form, setForm] = useState({ sku: '', name: '', costPrice: '', salePrice: '' });
+  const categories = useOptions(categoriesApi);
+  const units = useOptions(unitsApi);
 
-  const load = () => api.get('/products').then((res) => setProducts(res.data));
-  useEffect(() => { load(); }, []);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    await api.post('/products', {
-      ...form,
-      categoryId: products[0]?.categoryId,
-      unitId: products[0]?.unitId,
-      costPrice: Number(form.costPrice),
-      salePrice: Number(form.salePrice),
-    });
-    setForm({ sku: '', name: '', costPrice: '', salePrice: '' });
-    load();
-  };
+  const fields = [
+    { name: 'sku', label: 'SKU', required: true, maxLength: 60 },
+    { name: 'barcode', label: 'Código de barras', maxLength: 50 },
+    { name: 'name', label: 'Nombre', required: true, maxLength: 200, full: true },
+    { name: 'categoryId', label: 'Categoría', type: 'select', required: true, options: categories.map((c) => ({ value: c.id, label: c.name })) },
+    { name: 'unitId', label: 'Unidad', type: 'select', required: true, options: units.map((u) => ({ value: u.id, label: `${u.name} (${u.abbreviation})` })) },
+    { name: 'costPrice', label: 'Costo', type: 'number', required: true },
+    { name: 'salePrice', label: 'Precio de venta', type: 'number', required: true },
+    { name: 'minStock', label: 'Stock mínimo', type: 'number', required: true, defaultValue: 0 },
+    { name: 'description', label: 'Descripción', type: 'textarea' },
+    { name: 'trackStock', label: 'Controla inventario (desmarcar para servicios)', type: 'checkbox', defaultValue: true, full: true },
+    { name: 'isActive', label: 'Activo', type: 'checkbox', editOnly: true },
+  ];
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-semibold text-slate-900 mb-6">Productos</h1>
-
-      <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-xl p-5 flex gap-2 mb-6">
-        <input placeholder="SKU" value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })}
-          className="border border-slate-200 rounded-lg px-3 py-2 text-sm w-28 focus:outline-none focus:ring-2 focus:ring-teal-700" />
-        <input placeholder="Nombre" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-          className="border border-slate-200 rounded-lg px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-teal-700" />
-        <input placeholder="Costo" value={form.costPrice} onChange={(e) => setForm({ ...form, costPrice: e.target.value })}
-          className="border border-slate-200 rounded-lg px-3 py-2 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-teal-700" />
-        <input placeholder="Precio" value={form.salePrice} onChange={(e) => setForm({ ...form, salePrice: e.target.value })}
-          className="border border-slate-200 rounded-lg px-3 py-2 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-teal-700" />
-        <button className="bg-teal-700 text-white px-4 rounded-lg text-sm font-medium">Nuevo</button>
-      </form>
-
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left border-b border-slate-100 text-slate-500">
-              <th className="p-3 font-medium">SKU</th><th className="p-3 font-medium">Nombre</th>
-              <th className="p-3 font-medium">Costo</th><th className="p-3 font-medium">Precio</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((p) => (
-              <tr key={p.id} className="border-b border-slate-50 hover:bg-slate-50">
-                <td className="p-3 text-slate-500">{p.sku}</td>
-                <td className="p-3 text-slate-800">{p.name}</td>
-                <td className="p-3 text-slate-500">${Number(p.costPrice).toLocaleString()}</td>
-                <td className="p-3 text-slate-800">${Number(p.salePrice).toLocaleString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <CrudPage
+      title="Productos"
+      subtitle="Catálogo de lo que compras y vendes"
+      api={productsApi}
+      columns={productColumns}
+      fields={fields}
+      createLabel="Nuevo producto"
+      searchPlaceholder="Buscar por nombre, SKU o código de barras"
+    />
   );
 }

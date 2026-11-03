@@ -1,110 +1,131 @@
-import { useEffect, useState } from 'react';
-import api from '../api/client';
+import { useState } from 'react';
+import { getErrorMessage } from '../api/client';
+import { customersApi, invoicesApi, salesOrdersApi } from '../api/resources';
+import ErrorMessage from '../components/ErrorMessage';
+import OrderDetail from '../components/OrderDetail';
+import OrderForm from '../components/OrderForm';
+import PageHeader from '../components/PageHeader';
+import Pagination from '../components/Pagination';
+import StatusBadge from '../components/StatusBadge';
+import { useList, useOptions } from '../hooks/useList';
+import { date, money } from '../utils/format';
 
 export default function Sales() {
-  const [customers, setCustomers] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [customerId, setCustomerId] = useState('');
-  const [items, setItems] = useState([]);
-  const [selectedProduct, setSelectedProduct] = useState('');
-  const [quantity, setQuantity] = useState(1);
-  const [confirmedOrder, setConfirmedOrder] = useState(null);
+  const list = useList(salesOrdersApi);
+  const customers = useOptions(customersApi);
+  const [creating, setCreating] = useState(false);
+  const [viewing, setViewing] = useState(null);
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    api.get('/customers').then((res) => setCustomers(res.data));
-    api.get('/products').then((res) => setProducts(res.data));
-  }, []);
+  const run = async (action, message) => {
+    setError('');
+    setNotice('');
+    setBusy(true);
 
-  const addItem = () => {
-    const product = products.find((p) => p.id === selectedProduct);
-    if (!product || quantity <= 0) return;
-    setItems([...items, {
-      productId: product.id,
-      name: product.name,
-      quantity: Number(quantity),
-      unitPrice: Number(product.salePrice),
-    }]);
-    setSelectedProduct('');
-    setQuantity(1);
+    try {
+      await action();
+      setNotice(message);
+      list.reload();
+    } catch (err) {
+      // Ej. 409 "Stock insuficiente": la orden no cambia de estado
+      setError(getErrorMessage(err));
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const total = items.reduce((sum, it) => sum + it.quantity * it.unitPrice, 0);
-
-  const handleConfirm = async () => {
-    const { data: order } = await api.post('/sales-orders', {
-      companyId: 'seed-company-id',
-      warehouseId: 'e9ff077b-7025-4462-9030-a7ea97e8cedc',
-      customerId,
-      orderNumber: `SO-${Date.now()}`,
-      orderDate: new Date().toISOString(),
-      items: items.map(({ productId, quantity, unitPrice }) => ({ productId, quantity, unitPrice })),
-      userId: JSON.parse(localStorage.getItem('user')).id,
+  const create = async ({ partyId, orderDate, limitDate, notes, items }) => {
+    await salesOrdersApi.create({
+      customerId: partyId,
+      orderDate,
+      validUntil: limitDate,
+      notes,
+      items: items.map(({ productId, quantity, unitAmount, taxRate, discountRate }) => ({
+        productId, quantity, unitPrice: unitAmount, taxRate, discountRate,
+      })),
     });
+    setCreating(false);
+    setNotice('Cotización creada. Confírmala para reservar el stock.');
+    list.reload();
+  };
 
-    await api.post(`/sales-orders/${order.id}/confirm`, {
-      userId: JSON.parse(localStorage.getItem('user')).id,
-    });
-
-    setConfirmedOrder(order.orderNumber);
-    setItems([]);
-    setCustomerId('');
+  const cancel = (order) => {
+    if (window.confirm(`¿Cancelar la orden ${order.orderNumber}?`)) {
+      run(() => salesOrdersApi.action(order.id, 'cancel'), `Orden ${order.orderNumber} cancelada.`);
+    }
   };
 
   return (
-    <div className="p-8 bg-slate-100 min-h-screen">
-      <h1 className="text-2xl font-semibold text-slate-900 mb-6">Nueva orden de venta</h1>
+    <div className="p-4 sm:p-8">
+      <PageHeader title="Ventas" subtitle="Cotización → confirmada (reserva stock) → entregada (descuenta stock)">
+        <button className="ui-btn" onClick={() => setCreating(true)}>+ Nueva cotización</button>
+      </PageHeader>
 
-      {confirmedOrder && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-lg px-4 py-3 mb-4">
-          Orden {confirmedOrder} confirmada y stock actualizado.
+      <ErrorMessage message={error || list.error} />
+      {notice && <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-lg px-4 py-3 mb-4">{notice}</div>}
+
+      <div className="ui-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="ui-table">
+            <thead>
+              <tr><th>Número</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Estado</th><th className="text-right">Acciones</th></tr>
+            </thead>
+            <tbody>
+              {list.rows.map((order) => {
+                const invoiced = order.invoices.length > 0;
+                const canInvoice = (order.status === 'confirmed' || order.status === 'delivered') && !invoiced;
+
+                return (
+                  <tr key={order.id}>
+                    <td className="font-mono text-xs !text-slate-800">{order.orderNumber}</td>
+                    <td>{order.customer?.name ?? '—'}</td>
+                    <td className="whitespace-nowrap">{date(order.orderDate)}</td>
+                    <td className="!text-slate-800">{money(order.total)}</td>
+                    <td>
+                      <StatusBadge status={order.status} />
+                      {invoiced && <span className="text-xs text-slate-400 ml-2">Facturada</span>}
+                    </td>
+                    <td className="whitespace-nowrap text-right space-x-3">
+                      <button className="ui-link" onClick={() => setViewing(order)}>Ver</button>
+                      {order.status === 'quote' && (
+                        <button className="ui-link" disabled={busy} onClick={() => run(() => salesOrdersApi.action(order.id, 'confirm'), `Orden ${order.orderNumber} confirmada: stock reservado.`)}>Confirmar</button>
+                      )}
+                      {order.status === 'confirmed' && (
+                        <button className="ui-link" disabled={busy} onClick={() => run(() => salesOrdersApi.action(order.id, 'deliver'), `Orden ${order.orderNumber} entregada: stock descontado.`)}>Entregar</button>
+                      )}
+                      {canInvoice && (
+                        <button className="ui-link" disabled={busy} onClick={() => run(() => invoicesApi.create({ salesOrderId: order.id }), `Factura creada para ${order.orderNumber}. Regístrale los pagos en Facturas.`)}>Facturar</button>
+                      )}
+                      {(order.status === 'quote' || (order.status === 'confirmed' && !invoiced)) && (
+                        <button className="ui-link-danger" disabled={busy} onClick={() => cancel(order)}>Cancelar</button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              {list.rows.length === 0 && (
+                <tr><td colSpan={6} className="!text-slate-400 text-center !py-8">{list.loading ? 'Cargando…' : 'Todavía no hay órdenes de venta.'}</td></tr>
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
-
-      <div className="grid grid-cols-2 gap-6">
-        {/* Izquierda: cliente */}
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
-          <label className="block text-xs font-medium text-slate-500 mb-1">Cliente</label>
-          <select value={customerId} onChange={(e) => setCustomerId(e.target.value)}
-            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-700">
-            <option value="">Selecciona un cliente</option>
-            {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        </div>
-
-        {/* Derecha: items */}
-        <div className="bg-white border border-slate-200 rounded-xl p-5">
-          <label className="block text-xs font-medium text-slate-500 mb-1">Agregar producto</label>
-          <div className="flex gap-2 mb-4">
-            <select value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)}
-              className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm">
-              <option value="">Producto</option>
-              {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-            <input type="number" min="1" value={quantity} onChange={(e) => setQuantity(e.target.value)}
-              className="w-20 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
-            <button onClick={addItem} className="bg-slate-900 text-white px-3 rounded-lg text-sm">Agregar</button>
-          </div>
-
-          <div className="space-y-1 mb-4">
-            {items.map((it, i) => (
-              <div key={i} className="flex justify-between text-sm text-slate-700">
-                <span>{it.quantity} × {it.name}</span>
-                <span>${(it.quantity * it.unitPrice).toLocaleString()}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex justify-between items-center border-t border-slate-100 pt-3">
-            <span className="text-sm font-medium text-slate-500">Total</span>
-            <span className="text-lg font-semibold text-slate-900">${total.toLocaleString()}</span>
-          </div>
-        </div>
+        <Pagination page={list.page} pageSize={list.pageSize} total={list.total} onChange={list.setPage} />
       </div>
 
-      <button onClick={handleConfirm} disabled={!customerId || items.length === 0}
-        className="mt-6 bg-teal-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium disabled:opacity-40">
-        Confirmar orden
-      </button>
+      {creating && (
+        <OrderForm
+          kind="sale"
+          partyLabel="Cliente"
+          parties={customers}
+          dateField="valid-until"
+          dateLabel="Válida hasta"
+          onSubmit={create}
+          onClose={() => setCreating(false)}
+        />
+      )}
+      {viewing && <OrderDetail order={viewing} partyName={viewing.customer?.name ?? '—'} isSale onClose={() => setViewing(null)} />}
     </div>
   );
 }

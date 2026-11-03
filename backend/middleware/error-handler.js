@@ -27,6 +27,14 @@ function errorHandler(err, req, res, next) {
     if (err.code === 'P2025') {
       return res.status(404).json({ error: 'Registro no encontrado' });
     }
+    if (err.code === 'P2000' || err.code === 'P2020') {
+      return res.status(400).json({ error: 'Un valor supera el tamaño permitido' });
+    }
+  }
+
+  // Cuerpo que no es JSON válido o que supera el límite de express.json()
+  if (err.type === 'entity.parse.failed' || err.type === 'entity.too.large') {
+    return res.status(400).json({ error: 'El cuerpo de la petición no es válido' });
   }
 
   console.error(err);

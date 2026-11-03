@@ -7,7 +7,7 @@ const BaseModel = require('./base.model');
  * Las columnas y relaciones coinciden con schema.prisma.
  */
 class InvoiceModel extends BaseModel {
-  static prismaModel = prisma.invoice;
+  static delegate = 'invoice';
 
   static tableName = 'invoices';
 
@@ -43,6 +43,17 @@ class InvoiceModel extends BaseModel {
 
   static async findBySalesOrder(salesOrderId) {
     return prisma.invoice.findMany({ where: { salesOrderId } });
+  }
+
+  // Suma de totales y pagos de las facturas que cumplen el filtro
+  static async totals(where) {
+    const { _sum } = await prisma.invoice.aggregate({ where, _sum: { total: true, paidAmount: true } });
+    return { total: Number(_sum.total ?? 0), paid: Number(_sum.paidAmount ?? 0) };
+  }
+
+  // Bloquea la factura hasta terminar la transacción: dos pagos simultáneos no pueden pasarse del total
+  static async lock(tx, id) {
+    await tx.$queryRaw`SELECT id FROM invoices WHERE id = ${id} FOR UPDATE`;
   }
 }
 

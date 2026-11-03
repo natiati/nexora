@@ -1,58 +1,126 @@
 import { useEffect, useState } from 'react';
-import api from '../api/client';
+import { getErrorMessage } from '../api/client';
+import { customersApi } from '../api/resources';
+import CrudPage from '../components/CrudPage';
+import ErrorMessage from '../components/ErrorMessage';
+import { FieldGrid } from '../components/FormFields';
+import Modal from '../components/Modal';
+import StatusBadge from '../components/StatusBadge';
+import { dateTime, money } from '../utils/format';
 
-export default function Customers() {
-  const [customers, setCustomers] = useState([]);
-  const [form, setForm] = useState({ name: '', email: '', phone: '' });
+const INTERACTION_TYPES = [
+  { value: 'call', label: 'Llamada' },
+  { value: 'email', label: 'Correo' },
+  { value: 'meeting', label: 'Reunión' },
+  { value: 'visit', label: 'Visita' },
+  { value: 'note', label: 'Nota' },
+];
 
-  const load = () => api.get('/customers').then((res) => setCustomers(res.data));
+// demo_request lo crea el formulario de la landing; no se registra a mano
+const typeLabel = (type) => (type === 'demo_request' ? 'Solicitud de demo' : INTERACTION_TYPES.find((t) => t.value === type)?.label ?? type);
 
-  useEffect(() => { load(); }, []);
+const columns = [
+  { label: 'Código', key: 'code' },
+  { label: 'Nombre', key: 'name', strong: true },
+  { label: 'NIT', key: 'taxId' },
+  { label: 'Correo', key: 'email' },
+  { label: 'Ciudad', key: 'city' },
+  { label: 'Cupo', render: (c) => (c.creditLimit === null ? 'Sin límite' : money(c.creditLimit)) },
+  { label: 'Estado', render: (c) => <StatusBadge status={c.isActive ? 'active' : 'inactive'} /> },
+];
+
+const fields = [
+  { name: 'name', label: 'Nombre', required: true, maxLength: 150, full: true },
+  { name: 'code', label: 'Código', maxLength: 30 },
+  { name: 'taxId', label: 'NIT', maxLength: 30 },
+  { name: 'email', label: 'Correo', type: 'email', maxLength: 150 },
+  { name: 'phone', label: 'Teléfono', maxLength: 30 },
+  { name: 'city', label: 'Ciudad', maxLength: 100 },
+  { name: 'address', label: 'Dirección', maxLength: 300 },
+  { name: 'creditLimit', label: 'Cupo de crédito', type: 'number', help: 'Vacío = sin límite' },
+  { name: 'paymentTerms', label: 'Condiciones de pago', maxLength: 50, placeholder: '30 días', help: 'El número de días define el vencimiento de la factura' },
+  { name: 'notes', label: 'Notas', type: 'textarea' },
+  { name: 'isActive', label: 'Activo', type: 'checkbox', editOnly: true },
+];
+
+const interactionFields = [
+  { name: 'type', label: 'Tipo', type: 'select', required: true, options: INTERACTION_TYPES },
+  { name: 'subject', label: 'Asunto', maxLength: 200 },
+  { name: 'content', label: 'Detalle', type: 'textarea', required: true },
+];
+
+const emptyInteraction = { type: 'call', subject: '', content: '' };
+
+// Historial de contacto con el cliente (CRM)
+function InteractionsModal({ customer, onClose }) {
+  const [items, setItems] = useState([]);
+  const [values, setValues] = useState(emptyInteraction);
+  const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    customersApi.interactions(customer.id).then(setItems).catch((err) => setError(getErrorMessage(err)));
+  }, [customer.id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await api.post('/customers', { ...form, companyId: 'seed-company-id' });
-    setForm({ name: '', email: '', phone: '' });
-    load();
+    setError('');
+    setSaving(true);
+
+    try {
+      const created = await customersApi.addInteraction(customer.id, values);
+      setItems([created, ...items]);
+      setValues(emptyInteraction);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <div className="p-8 bg-slate-100 min-h-screen">
-      <h1 className="text-2xl font-semibold text-slate-900 mb-6">Clientes</h1>
+    <Modal title={`Historial · ${customer.name}`} onClose={onClose}>
+      <ErrorMessage message={error} />
 
-      <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-xl p-5 flex gap-2 mb-6">
-        <input placeholder="Nombre" value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
-          className="border border-slate-200 rounded-lg px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-teal-700" />
-        <input placeholder="Correo" value={form.email}
-          onChange={(e) => setForm({ ...form, email: e.target.value })}
-          className="border border-slate-200 rounded-lg px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-teal-700" />
-        <input placeholder="Teléfono" value={form.phone}
-          onChange={(e) => setForm({ ...form, phone: e.target.value })}
-          className="border border-slate-200 rounded-lg px-3 py-2 text-sm w-40 focus:outline-none focus:ring-2 focus:ring-teal-700" />
-        <button className="bg-teal-700 text-white px-4 rounded-lg text-sm font-medium">Nuevo cliente</button>
+      <form onSubmit={handleSubmit} className="mb-5">
+        <FieldGrid fields={interactionFields} values={values} onChange={setValues} />
+        <div className="flex justify-end mt-3">
+          <button className="ui-btn" disabled={saving}>{saving ? 'Guardando…' : 'Registrar'}</button>
+        </div>
       </form>
 
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left border-b border-slate-100 text-slate-500">
-              <th className="p-3 font-medium">Nombre</th>
-              <th className="p-3 font-medium">Correo</th>
-              <th className="p-3 font-medium">Teléfono</th>
-            </tr>
-          </thead>
-          <tbody>
-            {customers.map((c) => (
-              <tr key={c.id} className="border-b border-slate-50 hover:bg-slate-50">
-                <td className="p-3 text-slate-800">{c.name}</td>
-                <td className="p-3 text-slate-500">{c.email}</td>
-                <td className="p-3 text-slate-500">{c.phone}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="border-t border-slate-100 pt-4 space-y-3">
+        {items.length === 0 && <p className="text-sm text-slate-400">Todavía no hay interacciones.</p>}
+        {items.map((item) => (
+          <div key={item.id} className="text-sm">
+            <div className="flex justify-between gap-3">
+              <span className="font-medium text-slate-800">{typeLabel(item.type)}{item.subject ? ` · ${item.subject}` : ''}</span>
+              <span className="text-xs text-slate-400 shrink-0">{dateTime(item.interactionDate)}</span>
+            </div>
+            <p className="text-slate-600 mt-0.5 whitespace-pre-wrap">{item.content}</p>
+          </div>
+        ))}
       </div>
-    </div>
+    </Modal>
+  );
+}
+
+export default function Customers() {
+  const [history, setHistory] = useState(null);
+
+  return (
+    <>
+      <CrudPage
+        title="Clientes"
+        subtitle="A quién le vendes y qué se ha hablado con cada uno"
+        api={customersApi}
+        columns={columns}
+        fields={fields}
+        createLabel="Nuevo cliente"
+        searchPlaceholder="Buscar por nombre, código, NIT, correo o ciudad"
+        rowActions={(customer) => <button className="ui-link" onClick={() => setHistory(customer)}>Historial</button>}
+      />
+      {history && <InteractionsModal customer={history} onClose={() => setHistory(null)} />}
+    </>
   );
 }

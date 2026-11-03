@@ -7,7 +7,7 @@ const BaseModel = require('./base.model');
  * Las columnas y relaciones coinciden con schema.prisma.
  */
 class UserModel extends BaseModel {
-  static prismaModel = prisma.user;
+  static delegate = 'user';
 
   static tableName = 'users';
 
@@ -38,6 +38,14 @@ class UserModel extends BaseModel {
     return prisma.user.findUnique({ where: { email } });
   }
 
+  // Usuario + roles por empresa en una sola consulta (inicio de sesión)
+  static async findByEmailWithRoles(email) {
+    return prisma.user.findUnique({
+      where: { email },
+      include: { companyRoles: { include: { role: { include: { company: true } } } } }
+    });
+  }
+
   // Usuarios activos y no eliminados
   static async findActive() {
     return prisma.user.findMany({ where: { isActive: true, deletedAt: null }, orderBy: { createdAt: 'desc' } });
@@ -47,7 +55,7 @@ class UserModel extends BaseModel {
   static async findWithRoles(id) {
     return prisma.user.findUnique({
       where: { id },
-      include: { companyRoles: { include: { role: true } } }
+      include: { companyRoles: { include: { role: { include: { company: true } } } } }
     });
   }
 }

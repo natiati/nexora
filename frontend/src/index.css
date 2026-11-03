@@ -1,2 +1,56 @@
 @import "tailwindcss";
 
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Piezas de la aplicación interna (prefijo ui- para no chocar con los estilos de la landing) */
+@layer components {
+  .ui-card {
+    @apply bg-white border border-slate-200 rounded-xl;
+  }
+
+  .ui-input {
+    @apply w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-700 disabled:bg-slate-50 disabled:text-slate-400;
+  }
+
+  .ui-label {
+    @apply block text-xs font-medium text-slate-500 mb-1;
+  }
+
+  .ui-btn {
+    @apply inline-flex items-center justify-center gap-1.5 bg-teal-700 hover:bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .ui-btn-outline {
+    @apply inline-flex items-center justify-center gap-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .ui-link {
+    @apply text-teal-700 hover:text-teal-600 text-xs font-medium cursor-pointer disabled:opacity-40;
+  }
+
+  .ui-link-danger {
+    @apply text-red-600 hover:text-red-500 text-xs font-medium cursor-pointer disabled:opacity-40;
+  }
+
+  .ui-table {
+    @apply w-full text-sm;
+  }
+
+  .ui-table th {
+    @apply text-left p-3 font-medium text-slate-500 border-b border-slate-100 whitespace-nowrap;
+  }
+
+  .ui-table td {
+    @apply p-3 border-b border-slate-50 text-slate-600;
+  }
+
+  .ui-table tbody tr:hover {
+    @apply bg-slate-50;
+  }
+
+  .ui-table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+}

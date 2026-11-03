@@ -1,11 +1,18 @@
 const { z } = require('zod');
+const { optionalText, optionalLongText, optionalEmail, requiredText } = require('./common');
 
 const CreateSupplierSchema = z.object({
-  companyId: z.string().uuid(),
-  name: z.string().min(1).max(150),
-  email: z.string().email().max(150).optional(),
-  phone: z.string().max(30).optional(),
-  contactName: z.string().max(120).optional()
+  name: requiredText(150),
+  taxId: optionalText(30),
+  email: optionalEmail(),
+  phone: optionalText(30),
+  address: optionalLongText(),
+  contactName: optionalText(120),
+  notes: optionalLongText()
 });
 
-module.exports = { CreateSupplierSchema };
+const UpdateSupplierSchema = CreateSupplierSchema.partial().extend({
+  isActive: z.boolean().optional()
+});
+
+module.exports = { CreateSupplierSchema, UpdateSupplierSchema };
