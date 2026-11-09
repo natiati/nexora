@@ -1,20 +1,24 @@
 const AuthService = require('../services/auth.service');
 const { LoginSchema, ForgotPasswordSchema, ResetPasswordSchema } = require('../dtos/auth.dto');
+const { ok } = require('../utils/http-response');
 
 class AuthController {
-  static async login(req, res) {
-    const data = LoginSchema.parse(req.body);
-    res.json(await AuthService.login(data));
+  // POST /login → 200 con el token
+  static async login(datos) {
+    const data = LoginSchema.parse(datos);
+    return ok(await AuthService.login(data));
   }
 
-  static async forgotPassword(req, res) {
-    const data = ForgotPasswordSchema.parse(req.body);
-    res.json(await AuthService.requestPasswordReset(data));
+  // POST /password/forgot → 200
+  static async forgotPassword(datos) {
+    const data = ForgotPasswordSchema.parse(datos);
+    return ok(await AuthService.requestPasswordReset(data));
   }
 
-  static async resetPassword(req, res) {
-    const data = ResetPasswordSchema.parse(req.body);
-    res.json(await AuthService.resetPassword(data));
+  // POST /password/reset → 200
+  static async resetPassword(datos) {
+    const data = ResetPasswordSchema.parse(datos);
+    return ok(await AuthService.resetPassword(data));
   }
 }
 

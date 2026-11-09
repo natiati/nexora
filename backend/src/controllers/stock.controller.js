@@ -1,23 +1,23 @@
 const StockService = require('../services/stock.service');
 const { AdjustStockSchema } = require('../dtos/stock.dto');
 const { parsePagination } = require('../utils/pagination');
+const { ok, okPage } = require('../utils/http-response');
 
 class StockController {
-  static async list(req, res) {
-    const { data, total } = await StockService.list(req.user.companyId, parsePagination(req.query));
-    res.set('X-Total-Count', String(total));
-    res.json(data);
+  // GET /stock → 200
+  static async list(companyId, query) {
+    return okPage(await StockService.list(companyId, parsePagination(query)));
   }
 
-  static async listMovements(req, res) {
-    const { data, total } = await StockService.listMovements(req.user.companyId, parsePagination(req.query));
-    res.set('X-Total-Count', String(total));
-    res.json(data);
+  // GET /stock/movements → 200
+  static async listMovements(companyId, query) {
+    return okPage(await StockService.listMovements(companyId, parsePagination(query)));
   }
 
-  static async adjust(req, res) {
-    const data = AdjustStockSchema.parse(req.body);
-    res.json(await StockService.adjust(req.user.companyId, { ...data, userId: req.user.id }));
+  // POST /stock/adjust → 200
+  static async adjust(companyId, userId, datos) {
+    const data = AdjustStockSchema.parse(datos);
+    return ok(await StockService.adjust(companyId, { ...data, userId }));
   }
 }
 

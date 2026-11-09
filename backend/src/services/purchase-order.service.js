@@ -58,6 +58,21 @@ class PurchaseOrderService {
     );
   }
 
+  // GET /purchase-orders/:id
+  static async getById(companyId, orderId) {
+    const order = await PurchaseOrderModel.findOne(
+      { id: orderId, ...this.scope(companyId) },
+      { include: { supplier: true, items: true } }
+    );
+    if (!order) throw new AppError('Orden de compra no encontrada', 404);
+
+    const productMap = await ProductModel.findMapByIds([...new Set(order.items.map((item) => item.productId))]);
+    return {
+      ...order,
+      items: order.items.map((item) => ({ ...item, product: productMap.get(item.productId) ?? null }))
+    };
+  }
+
   // GET /purchase-orders
   static async list(companyId, { skip, take }) {
     const where = this.scope(companyId);
@@ -147,15 +162,18 @@ class PurchaseOrderService {
 
   // POST /purchase-orders/:id/cancel
   static async cancel(companyId, orderId) {
-    const order = await this.getOwned(undefined, companyId, orderId);
+    return PurchaseOrderModel.transaction(async (tx) => {
+      const order = await this.getOwned(tx, companyId, orderId);
 
-    const claimed = await PurchaseOrderModel.updateMany(
-      { id: order.id, status: { in: ['draft', 'ordered'] } },
-      { status: 'cancelled' }
-    );
-    if (claimed.count === 0) throw new AppError('Esta orden ya no se puede cancelar', 409);
+      const claimed = await PurchaseOrderModel.updateMany(
+        { id: order.id, status: { in: ['draft', 'ordered'] } },
+        { status: 'cancelled' },
+        tx
+      );
+      if (claimed.count === 0) throw new AppError('Esta orden ya no se puede cancelar', 409);
 
-    return PurchaseOrderModel.findById(orderId, { include: { items: true } });
+      return PurchaseOrderModel.findById(orderId, { include: { items: true } }, tx);
+    });
   }
 }
 

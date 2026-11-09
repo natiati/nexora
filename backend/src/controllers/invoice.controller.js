@@ -1,26 +1,34 @@
 const InvoiceService = require('../services/invoice.service');
 const { CreateInvoiceSchema, CreatePaymentSchema } = require('../dtos/invoice.dto');
 const { parsePagination } = require('../utils/pagination');
+const { ok, created, okPage } = require('../utils/http-response');
 
 class InvoiceController {
-  static async create(req, res) {
-    const data = CreateInvoiceSchema.parse(req.body);
-    res.status(201).json(await InvoiceService.create(req.user.companyId, { ...data, userId: req.user.id }));
+  // POST /invoices → 201
+  static async create(companyId, userId, datos) {
+    const data = CreateInvoiceSchema.parse(datos); //el dto valida los datos y los transforma a un objeto plano
+    return created(await InvoiceService.create(companyId, { ...data, userId })); //llamamos al servicio para crear la factura y devolvemos el resultado con el código 201
   }
 
-  static async list(req, res) {
-    const { data, total } = await InvoiceService.list(req.user.companyId, parsePagination(req.query));
-    res.set('X-Total-Count', String(total));
-    res.json(data);
+  // GET /invoices → 200
+  static async list(companyId, query) {
+    return okPage(await InvoiceService.list(companyId, parsePagination(query)));
   }
 
-  static async registerPayment(req, res) {
-    const data = CreatePaymentSchema.parse(req.body);
-    res.json(await InvoiceService.registerPayment(req.user.companyId, req.params.id, { ...data, userId: req.user.id }));
+  // GET /invoices/:id → 200
+  static async get(companyId, invoiceId) {
+    return ok(await InvoiceService.getById(companyId, invoiceId));
   }
 
-  static async cancel(req, res) {
-    res.json(await InvoiceService.cancel(req.user.companyId, req.params.id));
+  // POST /invoices/:id/payments → 200
+  static async registerPayment(companyId, invoiceId, userId, datos) {
+    const data = CreatePaymentSchema.parse(datos);
+    return ok(await InvoiceService.registerPayment(companyId, invoiceId, { ...data, userId }));
+  }
+
+  // POST /invoices/:id/cancel → 200
+  static async cancel(companyId, invoiceId) {
+    return ok(await InvoiceService.cancel(companyId, invoiceId));
   }
 }
 

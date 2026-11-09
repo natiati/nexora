@@ -1,27 +1,30 @@
 const UserService = require('../services/user.service');
 const { CreateUserSchema, UpdateUserSchema } = require('../dtos/user.dto');
 const { parsePagination } = require('../utils/pagination');
+const { ok, created, noContent, okPage } = require('../utils/http-response');
 
 class UserController {
-  static async list(req, res) {
-    const { data, total } = await UserService.list(req.user.companyId, parsePagination(req.query));
-    res.set('X-Total-Count', String(total));
-    res.json(data);
+  // GET /users → 200
+  static async list(companyId, query) {
+    return okPage(await UserService.list(companyId, parsePagination(query)));
   }
 
-  static async create(req, res) {
-    const data = CreateUserSchema.parse(req.body);
-    res.status(201).json(await UserService.create(req.user.companyId, data));
+  // POST /users → 201
+  static async create(companyId, datos) {
+    const data = CreateUserSchema.parse(datos);
+    return created(await UserService.create(companyId, data));
   }
 
-  static async update(req, res) {
-    const data = UpdateUserSchema.parse(req.body);
-    res.json(await UserService.update(req.user.companyId, req.params.id, req.user.id, data));
+  // PUT /users/:id → 200 (currentUserId: el usuario que hace la petición)
+  static async update(companyId, userId, currentUserId, datos) {
+    const data = UpdateUserSchema.parse(datos);
+    return ok(await UserService.update(companyId, userId, currentUserId, data));
   }
 
-  static async remove(req, res) {
-    await UserService.remove(req.user.companyId, req.params.id, req.user.id);
-    res.status(204).end();
+  // DELETE /users/:id → 204
+  static async remove(companyId, userId, currentUserId) {
+    await UserService.remove(companyId, userId, currentUserId);
+    return noContent();
   }
 }
 

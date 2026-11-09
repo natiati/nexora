@@ -18,7 +18,8 @@ function errorHandler(err, req, res, next) {
   }
 
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    if (err.code === 'P2002') {
+    // Violación de índice único (P2002) o restricción única compuesta (P2014)
+    if (err.code === 'P2002' || err.code === 'P2014') {
       return res.status(409).json({ error: 'El registro ya existe (violación de unicidad)' });
     }
     if (err.code === 'P2003') {

@@ -10,6 +10,7 @@ function loadEnv() {
   const { parsed = {} } = dotenv.config({ path: path.join(__dirname, '../../.env'), quiet: true });
 
   for (const [name, value] of Object.entries(parsed)) {
+    // Las variables de correo del archivo siempre sobreescriben las del sistema (intencional)
     if (MAIL_VARIABLES.test(name)) process.env[name] = value;
   }
 }

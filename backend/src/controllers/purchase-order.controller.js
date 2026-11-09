@@ -1,25 +1,33 @@
 const PurchaseOrderService = require('../services/purchase-order.service');
 const { CreatePurchaseOrderSchema } = require('../dtos/purchase-order.dto');
 const { parsePagination } = require('../utils/pagination');
+const { ok, created, okPage } = require('../utils/http-response');
 
 class PurchaseOrderController {
-  static async create(req, res) {
-    const data = CreatePurchaseOrderSchema.parse(req.body);
-    res.status(201).json(await PurchaseOrderService.create(req.user.companyId, { ...data, userId: req.user.id }));
+  // POST /purchase-orders → 201
+  static async create(companyId, userId, datos) {
+    const data = CreatePurchaseOrderSchema.parse(datos);
+    return created(await PurchaseOrderService.create(companyId, { ...data, userId }));
   }
 
-  static async list(req, res) {
-    const { data, total } = await PurchaseOrderService.list(req.user.companyId, parsePagination(req.query));
-    res.set('X-Total-Count', String(total));
-    res.json(data);
+  // GET /purchase-orders → 200
+  static async list(companyId, query) {
+    return okPage(await PurchaseOrderService.list(companyId, parsePagination(query)));
   }
 
-  static async receive(req, res) {
-    res.json(await PurchaseOrderService.receive(req.user.companyId, req.params.id, req.user.id));
+  // GET /purchase-orders/:id → 200
+  static async get(companyId, orderId) {
+    return ok(await PurchaseOrderService.getById(companyId, orderId));
   }
 
-  static async cancel(req, res) {
-    res.json(await PurchaseOrderService.cancel(req.user.companyId, req.params.id));
+  // POST /purchase-orders/:id/receive → 200
+  static async receive(companyId, orderId, userId) {
+    return ok(await PurchaseOrderService.receive(companyId, orderId, userId));
+  }
+
+  // POST /purchase-orders/:id/cancel → 200
+  static async cancel(companyId, orderId) {
+    return ok(await PurchaseOrderService.cancel(companyId, orderId));
   }
 }
 

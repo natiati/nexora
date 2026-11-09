@@ -2,7 +2,7 @@
 function slugify(text) {
   return text
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/\p{M}/gu, '')   // elimina todos los diacríticos (Unicode category M)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')

@@ -1,7 +1,7 @@
 # Nexora
 
-Plataforma SaaS multi-tenant de gestión de inventario, ventas y CRM.
-Proyecto final de las materias Diseño de Software y Desarrollo Web – CUN.
+Plataforma de gestión de inventario, ventas y CRM.
+
 
 - **Backend:** Node.js + Express 5 + Prisma 7 + PostgreSQL
 - **Frontend:** React 19 + Vite + Tailwind
@@ -28,6 +28,9 @@ npm run dev
 |---|---|
 | Landing y aplicación | http://localhost:5173 |
 | API | http://localhost:3000 |
+| Documentación de la API (Swagger) | http://localhost:3000/docs |
+
+Si tu base ya existía, aplica las migraciones nuevas con `npx prisma migrate deploy` (dentro de `backend/`).
 
 | Usuario de prueba | Clave | Rol |
 |---|---|---|
@@ -44,15 +47,17 @@ Arquitectura limpia por capas con patrón MVC. Las dependencias solo apuntan hac
 Petición HTTP
    │
    ▼
-api/          Rutas: URL + permisos → método del controlador        ┐
-controllers/  Controlador (MVC): traduce HTTP ⇄ service, sin reglas │ Entrada
-dtos/         Validan con Zod los datos que entran                  ┘
+routes/       URL + método HTTP + permisos. Único lugar que toca Express (req/res):  ┐
+              saca los datos de la petición y se los pasa al controlador.          │
+controllers/  Controlador (MVC): recibe los datos, los valida con el DTO,          │ Entrada
+              llama al service y devuelve el código HTTP (200, 201, 204).          │
+dtos/         DTO de entrada: validan con Zod los datos que entran                 ┘
    │
    ▼
-services/     Reglas de negocio y transacciones                       Negocio
+services/     Reglas de negocio y transacciones                              Negocio
    │
    ▼
-models/       Modelo (MVC): una clase por tabla; únicos que usan Prisma   Datos
+models/       Modelo y repositorio: una clase por tabla; únicos que usan Prisma    Datos
    │
    ▼
 PostgreSQL
@@ -67,15 +72,16 @@ backend/
 ├── prisma/            schema.prisma (19 tablas) · migrations · seed.js
 ├── tests/             Pruebas de integración de la API
 └── src/
-    ├── app.js         Configura Express (helmet, CORS, rutas, errores)
-    ├── api/           *.routes.js
-    ├── controllers/   *.controller.js
+    ├── app.js         Configura Express (helmet, CORS, Swagger, rutas, errores)
+    ├── docs/          swagger.js (especificación OpenAPI que se ve en /docs)
+    ├── routes/        *.routes.js · index.js (monta todas las rutas) · http-adapter.js (envía la respuesta)
+    ├── controllers/   *.controller.js · crud.controller.js (CRUD genérico)
     ├── dtos/          *.dto.js
     ├── services/      *.service.js
     ├── models/        *.model.js (19) sobre BaseModel
     ├── lib/prisma.js  Cliente único de Prisma
     ├── lib/mailer.js  Único punto que envía correos (SMTP)
-    └── utils/         AppError · paginación · totales · números de documento
+    └── utils/         AppError · respuestas HTTP (ok, created…) · paginación · totales · números de documento
 
 frontend/src/
 ├── api/               client.js (axios + JWT) · resources.js (una función por endpoint) · session.js

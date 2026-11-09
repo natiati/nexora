@@ -1,5 +1,6 @@
 const { Router } = require('express');
 const rateLimit = require('express-rate-limit');
+const http = require('./http-adapter');
 const AuthController = require('../controllers/auth.controller');
 
 const router = Router();
@@ -30,8 +31,8 @@ const resetLimiter = rateLimit({
   message: { error: 'Demasiados intentos, intente de nuevo en 15 minutos' }
 });
 
-router.post('/login', loginLimiter, AuthController.login);
-router.post('/password/forgot', forgotLimiter, AuthController.forgotPassword);
-router.post('/password/reset', resetLimiter, AuthController.resetPassword);
+router.post('/login', loginLimiter, http((req) => AuthController.login(req.body)));
+router.post('/password/forgot', forgotLimiter, http((req) => AuthController.forgotPassword(req.body)));
+router.post('/password/reset', resetLimiter, http((req) => AuthController.resetPassword(req.body)));
 
 module.exports = router;

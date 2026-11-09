@@ -1,14 +1,17 @@
 const CompanyService = require('../services/company.service');
 const { UpdateCompanySchema } = require('../dtos/company.dto');
+const { ok } = require('../utils/http-response');
 
 class CompanyController {
-  static async get(req, res) {
-    res.json(await CompanyService.get(req.user.companyId));
+  // GET /company → 200
+  static async get(companyId) {
+    return ok(await CompanyService.get(companyId));
   }
 
-  static async update(req, res) {
-    const data = UpdateCompanySchema.parse(req.body);
-    res.json(await CompanyService.update(req.user.companyId, data));
+  // PUT /company → 200
+  static async update(companyId, datos) {
+    const data = UpdateCompanySchema.parse(datos);
+    return ok(await CompanyService.update(companyId, data));
   }
 }
 

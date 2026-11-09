@@ -63,6 +63,16 @@ class InvoiceService {
     });
   }
 
+  // GET /invoices/:id
+  static async getById(companyId, invoiceId) {
+    const invoice = await InvoiceModel.findOne(
+      { id: invoiceId, ...this.scope(companyId) },
+      { include: { payments: { orderBy: { createdAt: 'desc' } }, salesOrder: { include: { customer: true } } } }
+    );
+    if (!invoice) throw new AppError('Factura no encontrada', 404);
+    return { ...invoice, customer: invoice.salesOrder?.customer ?? null };
+  }
+
   // GET /invoices: facturas paginadas
   static async list(companyId, { skip, take }) {
     const where = this.scope(companyId);

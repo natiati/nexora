@@ -57,6 +57,21 @@ class SalesOrderService {
     );
   }
 
+  // GET /sales-orders/:id
+  static async getById(companyId, orderId) {
+    const order = await SalesOrderModel.findOne(
+      { id: orderId, ...this.scope(companyId) },
+      { include: { customer: true, items: true, invoices: { where: { status: { not: 'cancelled' } } } } }
+    );
+    if (!order) throw new AppError('Orden de venta no encontrada', 404);
+
+    const productMap = await ProductModel.findMapByIds([...new Set(order.items.map((item) => item.productId))]);
+    return {
+      ...order,
+      items: order.items.map((item) => ({ ...item, product: productMap.get(item.productId) ?? null }))
+    };
+  }
+
   // GET /sales-orders
   static async list(companyId, { skip, take }) {
     const where = this.scope(companyId);

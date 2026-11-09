@@ -217,6 +217,7 @@ model StockLevel {
   reservedQuantity Decimal   @default(0) @map("reserved_quantity") @db.Decimal(14, 3)
   updatedAt        DateTime  @updatedAt @map("updated_at")
 
+  @@unique([productId, warehouseId])
   @@map("stock_levels")
 }
 
@@ -242,7 +243,7 @@ model PurchaseOrder {
   supplierId   String    @map("supplier_id")
   supplier     Supplier  @relation(fields: [supplierId], references: [id])
   orderNumber  String    @map("order_number") @db.VarChar(30)
-  status       String    @default("draft") @db.VarChar(30)
+  status       String    @default("ordered") @db.VarChar(30)
   orderDate    DateTime  @map("order_date") @db.Date
   expectedDate DateTime? @map("expected_date") @db.Date
   subtotal     Decimal   @default(0) @db.Decimal(14, 2)
@@ -317,7 +318,7 @@ model Invoice {
   salesOrderId   String?     @map("sales_order_id")
   salesOrder     SalesOrder? @relation(fields: [salesOrderId], references: [id])
   invoiceNumber  String      @map("invoice_number") @db.VarChar(30)
-  status         String      @default("draft") @db.VarChar(30)
+  status         String      @default("issued") @db.VarChar(30)
   issueDate      DateTime    @map("issue_date") @db.Date
   dueDate        DateTime?   @map("due_date") @db.Date
   subtotal       Decimal     @default(0) @db.Decimal(14, 2)

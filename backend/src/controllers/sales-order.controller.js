@@ -1,29 +1,38 @@
 const SalesOrderService = require('../services/sales-order.service');
 const { CreateSalesOrderSchema } = require('../dtos/sales-order.dto');
 const { parsePagination } = require('../utils/pagination');
+const { ok, created, okPage } = require('../utils/http-response');
 
 class SalesOrderController {
-  static async create(req, res) {
-    const data = CreateSalesOrderSchema.parse(req.body);
-    res.status(201).json(await SalesOrderService.create(req.user.companyId, { ...data, userId: req.user.id }));
+  // POST /sales-orders → 201
+  static async create(companyId, userId, datos) {
+    const data = CreateSalesOrderSchema.parse(datos);
+    return created(await SalesOrderService.create(companyId, { ...data, userId }));
   }
 
-  static async list(req, res) {
-    const { data, total } = await SalesOrderService.list(req.user.companyId, parsePagination(req.query));
-    res.set('X-Total-Count', String(total));
-    res.json(data);
+  // GET /sales-orders → 200
+  static async list(companyId, query) {
+    return okPage(await SalesOrderService.list(companyId, parsePagination(query)));
   }
 
-  static async confirm(req, res) {
-    res.json(await SalesOrderService.confirm(req.user.companyId, req.params.id));
+  // GET /sales-orders/:id → 200
+  static async get(companyId, orderId) {
+    return ok(await SalesOrderService.getById(companyId, orderId));
   }
 
-  static async deliver(req, res) {
-    res.json(await SalesOrderService.deliver(req.user.companyId, req.params.id, req.user.id));
+  // POST /sales-orders/:id/confirm → 200
+  static async confirm(companyId, orderId) {
+    return ok(await SalesOrderService.confirm(companyId, orderId));
   }
 
-  static async cancel(req, res) {
-    res.json(await SalesOrderService.cancel(req.user.companyId, req.params.id));
+  // POST /sales-orders/:id/deliver → 200
+  static async deliver(companyId, orderId, userId) {
+    return ok(await SalesOrderService.deliver(companyId, orderId, userId));
+  }
+
+  // POST /sales-orders/:id/cancel → 200
+  static async cancel(companyId, orderId) {
+    return ok(await SalesOrderService.cancel(companyId, orderId));
   }
 }
 

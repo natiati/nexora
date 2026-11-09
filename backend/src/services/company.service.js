@@ -9,6 +9,8 @@ class CompanyService {
   }
 
   static async update(companyId, data) {
+    // Verifica existencia antes de actualizar para lanzar un 404 explícito
+    await this.get(companyId);
     return CompanyModel.update(companyId, data);
   }
 }

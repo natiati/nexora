@@ -1,14 +1,17 @@
 const UnitService = require('../services/unit.service');
 const { CreateUnitSchema } = require('../dtos/unit.dto');
+const { ok, created } = require('../utils/http-response');
 
 class UnitController {
-  static async list(req, res) {
-    res.json(await UnitService.list());
+  // GET /units → 200
+  static async list() {
+    return ok(await UnitService.list());
   }
 
-  static async create(req, res) {
-    const data = CreateUnitSchema.parse(req.body);
-    res.status(201).json(await UnitService.create(data));
+  // POST /units → 201
+  static async create(datos) {
+    const data = CreateUnitSchema.parse(datos);
+    return created(await UnitService.create(data));
   }
 }
 

@@ -1,32 +1,39 @@
 const { parsePagination } = require('../utils/pagination');
+const { ok, created, noContent, okPage } = require('../utils/http-response');
 
-// Controlador estándar de un catálogo: solo traduce HTTP ⇄ service, sin reglas de negocio.
-// Express 5 envía al error-handler los errores de los handlers async.
+/**
+ * Controlador estándar de un catálogo (listar, consultar, crear, actualizar, eliminar).
+ * Recibe valores simples (no conoce Express): valida con el DTO, llama al service
+ * y devuelve el código HTTP con el resultado. No contiene reglas de negocio.
+ */
 function createCrudController(service, { createSchema, updateSchema }) {
   return {
-    async list(req, res) {
-      const { data, total } = await service.list(req.user.companyId, parsePagination(req.query));
-      res.set('X-Total-Count', String(total));
-      res.json(data);
+    // GET /recurso → 200
+    async list(companyId, query) {
+      return okPage(await service.list(companyId, parsePagination(query)));
     },
 
-    async get(req, res) {
-      res.json(await service.getById(req.user.companyId, req.params.id));
+    // GET /recurso/:id → 200
+    async get(companyId, id) {
+      return ok(await service.getById(companyId, id));
     },
 
-    async create(req, res) {
-      const data = createSchema.parse(req.body);
-      res.status(201).json(await service.create(req.user.companyId, data));
+    // POST /recurso → 201
+    async create(companyId, datos) {
+      const data = createSchema.parse(datos);
+      return created(await service.create(companyId, data));
     },
 
-    async update(req, res) {
-      const data = updateSchema.parse(req.body);
-      res.json(await service.update(req.user.companyId, req.params.id, data));
+    // PUT /recurso/:id → 200
+    async update(companyId, id, datos) {
+      const data = updateSchema.parse(datos);
+      return ok(await service.update(companyId, id, data));
     },
 
-    async remove(req, res) {
-      await service.remove(req.user.companyId, req.params.id);
-      res.status(204).end();
+    // DELETE /recurso/:id → 204
+    async remove(companyId, id) {
+      await service.remove(companyId, id);
+      return noContent();
     }
   };
 }

@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const rateLimit = require('express-rate-limit');
 const authMiddleware = require('../../middleware/auth');
+const http = require('./http-adapter');
 const DemoRequestController = require('../controllers/demo-request.controller');
 
 const router = Router();
@@ -14,7 +15,7 @@ const requestLimiter = rateLimit({
   message: { error: 'Demasiadas solicitudes, intenta de nuevo más tarde' }
 });
 
-router.post('/', requestLimiter, DemoRequestController.create);
-router.get('/', authMiddleware, DemoRequestController.list);
+router.post('/', requestLimiter, http((req) => DemoRequestController.create(req.body)));
+router.get('/', authMiddleware, http((req) => DemoRequestController.list(req.user.companyId, req.query)));
 
 module.exports = router;
